@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rishabh - Engineer, Writer, Thinker</title>
+    <meta name="description" content="Personal website of Rishabh - Engineer, Writer, Thinker">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Marked.js for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <!-- Custom theme configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cream: {
+                            50: '#fefcf3',
+                            100: '#fef7e0',
+                            200: '#fcefc1',
+                            300: '#f8e197',
+                            400: '#f3cd6b',
+                            500: '#eeb948',
+                            600: '#de9f39',
+                            700: '#b97f32',
+                            800: '#956530',
+                            900: '#7a5429',
+                            950: '#422d14',
+                        }
+                    },
+                    fontFamily: {
+                        'mono': ['JetBrains Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'monospace'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'typewriter': 'typewriter 3s steps(40) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        glow: {
+                            'from': { boxShadow: '0 0 20px rgba(238, 185, 72, 0.5)' },
+                            'to': { boxShadow: '0 0 30px rgba(238, 185, 72, 0.8)' },
+                        },
+                        typewriter: {
+                            'from': { width: '0' },
+                            'to': { width: '100%' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+        
+        .typewriter {
+            overflow: hidden;
+            border-right: 2px solid;
+            white-space: nowrap;
+            animation: typewriter 3s steps(40) infinite;
+        }
+        
+        .grain {
+            background-image: 
+                radial-gradient(circle at 1px 1px, rgba(255,255,255,.15) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+        
+        .text-shadow {
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .glass {
+            backdrop-filter: blur(10px);
+            background: rgba(254, 252, 243, 0.8);
+        }
+        
+        .dark .glass {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        /* Enhanced Blog Modal Styles */
+        .blog-modal {
+            backdrop-filter: blur(10px);
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .blog-content {
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1.8;
+        }
+
+        /* Enhanced Prose Styles */
+        .prose {
+            color: #374151;
+            max-width: none;
+        }
+
+        .dark .prose {
+            color: #f3cd6b;
+        }
+
+        .prose h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 2rem;
+            color: #eeb948;
+            border-bottom: 3px solid #eeb948;
+            padding-bottom: 0.75rem;
+        }
+
+        .prose h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-top: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: #de9f39;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .prose h2::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 60%;
+            background: linear-gradient(135deg, #eeb948, #de9f39);
+            border-radius: 2px;
+        }
+
+        .prose h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: #b97f32;
+            padding-left: 0.75rem;
+            border-left: 2px solid #eeb948;
+        }
+
+        .prose h4, .prose h5, .prose h6 {
+            color: #956530;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .prose p {
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+
+        .prose ul, .prose ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+
+        .prose li {
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
+        }
+
+        .prose li::marker {
+            color: #eeb948;
+            font-weight: bold;
+        }
+
+        .prose blockquote {
+            border-left: 4px solid #eeb948;
+            padding-left: 1.5rem;
+            margin: 2rem 0;
+            font-style: italic;
+            background: rgba(238, 185, 72, 0.05);
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .prose code {
+            background: rgba(238, 185, 72, 0.1);
+            color: #de9f39;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .prose pre {
+            background: #1a1a1a;
+            color: #f3cd6b;
+            padding: 1.5rem;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 2rem 0;
+            border: 1px solid #eeb948;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .prose pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+            border-radius: 0;
+            font-size: 0.95em;
+        }
+
+        .prose a {
+            color: #eeb948;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            transition: all 0.2s ease;
+        }
+
+        .prose a:hover {
+            color: #de9f39;
+            text-decoration-thickness: 2px;
+        }
+
+        .prose strong {
+            color: #eeb948;
+            font-weight: 700;
+        }
+
+        .prose em {
+            color: #de9f39;
+            font-style: italic;
+        }
+
+        .prose hr {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #eeb948, transparent);
+            margin: 3rem 0;
+        }
+
+        .prose table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+        }
+
+        .prose th, .prose td {
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+
+        .prose th {
+            background: rgba(238, 185, 72, 0.1);
+            font-weight: 600;
+            color: #de9f39;
+        }
+
+        .dark .prose th, .dark .prose td {
+            border-color: #333;
+        }
+
+        .dark .prose th {
+            background: rgba(238, 185, 72, 0.2);
+        }
+
+        /* Dark mode prose adjustments */
+        .dark .prose h1, .dark .prose h2, .dark .prose h3, .dark .prose h4, .dark .prose h5, .dark .prose h6 {
+            color: #eeb948;
+        }
+
+        .dark .prose code {
+            background: rgba(238, 185, 72, 0.2);
+            color: #f3cd6b;
+        }
+
+        .dark .prose blockquote {
+            background: rgba(238, 185, 72, 0.1);
+            border-color: #eeb948;
+        }
+        
+        /* Dynamic classes that will be injected by JavaScript */
+        .nav-link {
+            @apply hover:text-cream-600 dark:hover:text-cream-400 transition-colors;
+        }
+        
+        .blog-category-btn {
+            @apply px-6 py-2 rounded-full border border-cream-300 dark:border-cream-600 text-gray-600 dark:text-cream-300 hover:border-cream-500 dark:hover:border-cream-500 hover:text-cream-600 dark:hover:text-cream-400 transition-all duration-300;
+        }
+        
+        .blog-category-btn.active {
+            @apply bg-cream-600 dark:bg-cream-500 text-white border-cream-600 dark:border-cream-500;
+        }
+        
+        .category-badge {
+            @apply text-xs px-3 py-1 rounded-full font-medium;
+        }
+        
+        .category-technical { @apply bg-blue-100 text-blue-700; }
+        .category-philosophical { @apply bg-purple-100 text-purple-700; }
+        .category-random { @apply bg-green-100 text-green-700; }
+        .category-personal { @apply bg-pink-100 text-pink-700; }
+
+        .dark .category-badge {
+            @apply bg-[#1a1a1a] text-cream-400 border border-cream-600;
+        }
+        
+        .contact-card {
+            @apply block p-6 bg-white dark:bg-[#1a1a1a] rounded-2xl border border-cream-200 dark:border-cream-600 text-center hover:shadow-lg hover:scale-105 transition-all duration-300;
+        }
+        
+        .animate-in {
+            @apply opacity-100 translate-y-0;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Blog Dropdown Styles */
+        .blog-dropdown-item {
+            @apply flex items-center px-4 py-3 text-gray-700 dark:text-cream-300 hover:bg-cream-100 dark:hover:bg-[#2a2a2a] hover:text-cream-600 dark:hover:text-cream-400 rounded-lg transition-all duration-200 cursor-pointer;
+        }
+
+        .blog-dropdown-item:hover {
+            transform: translateX(4px);
+        }
+
+        .blog-dropdown-item.all-posts {
+            @apply border-b border-cream-200 dark:border-cream-600 mb-2;
+        }
+
+        .blog-dropdown-item .category-icon {
+            @apply w-3 h-3 rounded-full mr-3 flex-shrink-0;
+        }
+
+        .category-icon.technical,
+        .category-icon.philosophical,
+        .category-icon.random,
+        .category-icon.personal,
+        .category-icon.tutorials,
+        .category-icon.reviews { 
+            @apply bg-cream-500; 
+        }
+
+        .dark .category-icon.technical,
+        .dark .category-icon.philosophical,
+        .dark .category-icon.random,
+        .dark .category-icon.personal,
+        .dark .category-icon.tutorials,
+        .dark .category-icon.reviews { 
+            @apply bg-cream-600; 
+        }
+
+        .category-icon.all { @apply bg-gradient-to-r from-cream-400 to-cream-600; }
+
+        .category-count {
+            @apply ml-auto text-xs px-2 py-1 bg-cream-200 dark:bg-[#2a2a2a] text-cream-700 dark:text-cream-300 rounded-full;
+        }
+    </style>
+</head>
+<body class="font-mono bg-cream-50 dark:bg-black text-gray-900 dark:text-cream-100 transition-all duration-500 grain">
+    
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-cream-200 dark:border-cream-600">
+        <div class="max-w-6xl mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="text-xl font-bold tracking-tight">
+                    <span class="text-cream-600 dark:text-cream-400">&lt;</span>
+                    <span class="hover:text-cream-600 dark:hover:text-cream-400 transition-colors">Rishabh</span>
+                    <span class="text-cream-600 dark:text-cream-400">/&gt;</span>
+                </div>
+                
+                <div class="hidden md:flex space-x-8">
+                    <a href="#home" class="nav-link">Home</a>
+                    <div class="relative group">
+                        <a href="#blog" class="nav-link flex items-center">
+                            Blog
+                            <svg class="w-4 h-4 ml-1 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </a>
+                        <!-- Dropdown Menu -->
+                        <div class="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-[#1a1a1a] rounded-xl border border-cream-200 dark:border-cream-600 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2 z-50">
+                            <div class="p-2" id="blog-categories-dropdown">
+                                <!-- Categories will be loaded here dynamically -->
+                                <div class="animate-pulse space-y-2">
+                                    <div class="h-8 bg-cream-100 dark:bg-[#2a2a2a] rounded"></div>
+                                    <div class="h-8 bg-cream-100 dark:bg-[#2a2a2a] rounded"></div>
+                                    <div class="h-8 bg-cream-100 dark:bg-[#2a2a2a] rounded"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="#about" class="nav-link">About</a>
+                    <a href="#contact" class="nav-link">Contact</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Dark mode toggle -->
+                    <button id="theme-toggle" class="p-2 rounded-full hover:bg-cream-200 dark:hover:bg-[#2a2a2a] transition-colors">
+                        <svg class="w-5 h-5 dark:hidden" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <svg class="w-5 h-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                        </svg>
+                    </button>
+                    
+                    <!-- Mobile menu button -->
+                    <button id="mobile-menu-toggle" class="md:hidden p-2 rounded-full hover:bg-cream-200 dark:hover:bg-[#2a2a2a] transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Mobile menu -->
+            <div id="mobile-menu" class="hidden md:hidden mt-4 pb-4 border-t border-cream-200 dark:border-cream-600">
+                <div class="flex flex-col space-y-2 mt-4">
+                    <a href="#home" class="nav-link">Home</a>
+                    <div class="relative">
+                        <button id="mobile-blog-toggle" class="nav-link w-full text-left flex items-center justify-between">
+                            Blog
+                            <svg class="w-4 h-4 transition-transform" id="mobile-blog-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div id="mobile-blog-categories" class="hidden mt-2 ml-4 space-y-1">
+                            <!-- Mobile categories will be loaded here -->
+                        </div>
+                    </div>
+                    <a href="#about" class="nav-link">About</a>
+                    <a href="#contact" class="nav-link">Contact</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Home Section -->
+        <section id="home" class="min-h-screen flex items-center justify-center relative overflow-hidden">
+            <!-- Animated background elements -->
+            <div class="absolute inset-0">
+                <div class="absolute top-20 left-20 w-64 h-64 bg-cream-200 dark:bg-cream-600 rounded-full opacity-20 animate-float"></div>
+                <div class="absolute bottom-20 right-20 w-48 h-48 bg-cream-300 dark:bg-cream-500 rounded-full opacity-30 animate-float" style="animation-delay: -2s;"></div>
+                <div class="absolute top-1/2 left-1/4 w-32 h-32 bg-cream-400 dark:bg-cream-400 rounded-full opacity-25 animate-float" style="animation-delay: -4s;"></div>
+            </div>
+            
+            <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+                <div class="mb-8">
+                    <h1 class="text-5xl md:text-7xl font-bold mb-4 leading-tight">
+                        <span class="text-cream-600 dark:text-cream-400">Hello,</span><br>
+                        <span class="typewriter">I'm Rishabh</span>
+                    </h1>
+                    <p class="text-xl md:text-2xl text-gray-600 dark:text-cream-300 mb-8 max-w-2xl mx-auto">
+                        Engineer × Writer × Thinker<br>
+                        <span class="text-base">Building the future, one line of code at a time</span>
+                    </p>
+                </div>
+                
+                <div class="max-w-2xl mx-auto text-left bg-cream-100 dark:bg-[#1a1a1a] p-8 rounded-2xl border border-cream-200 dark:border-cream-600 hover:shadow-lg transition-shadow duration-300">
+                    <p class="text-lg leading-relaxed text-gray-700 dark:text-cream-300">
+                        I'm a passionate engineer who loves to explore the intersection of technology, philosophy, and human experience. 
+                        When I'm not crafting code, you'll find me writing about life's complexities or diving deep into random thoughts 
+                        that keep me awake at night.
+                    </p>
+                </div>
+                
+                <div class="mt-12">
+                    <a href="#blog" class="inline-flex items-center px-8 py-3 bg-cream-600 dark:bg-cream-500 text-white rounded-full hover:bg-cream-700 dark:hover:bg-cream-600 transition-all duration-300 hover:scale-105 animate-glow">
+                        Explore My Thoughts
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Blog Section -->
+        <section id="blog" class="py-20 bg-cream-100 dark:bg-[#111111]">
+            <div class="max-w-6xl mx-auto px-6">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4 text-center">
+                    <span class="text-cream-600 dark:text-cream-400">&lt;</span>Blog<span class="text-cream-600 dark:text-cream-400">/&gt;</span>
+                </h2>
+                <p class="text-center text-gray-600 dark:text-cream-300 mb-12 max-w-2xl mx-auto">
+                    A collection of my thoughts on technology, philosophy, and the randomness of life.
+                </p>
+                
+                <!-- Blog Categories -->
+                <div class="flex flex-wrap justify-center gap-4 mb-12">
+                    <button class="blog-category-btn active" data-category="all">All Posts</button>
+                    <button class="blog-category-btn" data-category="technical">Technical</button>
+                    <button class="blog-category-btn" data-category="philosophical">Philosophical</button>
+                    <button class="blog-category-btn" data-category="random">Random Thoughts</button>
+                </div>
+                
+                <!-- Blog Posts Container -->
+                <div id="blog-posts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Blog posts will be loaded here dynamically -->
+                </div>
+                
+                <!-- Loading state -->
+                <div id="blog-loading" class="text-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cream-600 mx-auto"></div>
+                    <p class="mt-4 text-gray-600 dark:text-cream-400">Loading posts...</p>
+                </div>
+                
+                <!-- Empty state -->
+                <div id="blog-empty" class="hidden text-center py-12">
+                    <p class="text-gray-600 dark:text-cream-400">No posts found in this category.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="py-20">
+            <div class="max-w-4xl mx-auto px-6">
+                <h2 class="text-4xl md:text-5xl font-bold mb-12 text-center">
+                    <span class="text-cream-600 dark:text-cream-400">&lt;</span>About<span class="text-cream-600 dark:text-cream-400">/&gt;</span>
+                </h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-6">
+                        <h3 class="text-2xl font-bold mb-4">A bit more about me</h3>
+                        <p class="text-lg leading-relaxed text-gray-700 dark:text-cream-300">
+                            I'm driven by curiosity and the belief that technology should make life more meaningful. 
+                            My journey spans from writing clean code to pondering life's biggest questions.
+                        </p>
+                        <p class="text-lg leading-relaxed text-gray-700 dark:text-cream-300">
+                            When I'm not behind a screen, I enjoy deep conversations, exploring new ideas, 
+                            and finding patterns in the seemingly random chaos of existence.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-cream-100 dark:bg-[#1a1a1a] p-8 rounded-2xl border border-cream-200 dark:border-cream-600">
+                        <h4 class="text-xl font-bold mb-6">Quick Facts</h4>
+                        <div class="space-y-4">
+                            <div class="flex items-center">
+                                <span class="text-cream-600 dark:text-cream-400 mr-3">▸</span>
+                                <span>Coffee consumed daily: ∞</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-cream-600 dark:text-cream-400 mr-3">▸</span>
+                                <span>Favorite programming language: The one that solves the problem</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-cream-600 dark:text-cream-400 mr-3">▸</span>
+                                <span>Philosophy: Build with purpose, think with depth</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-cream-600 dark:text-cream-400 mr-3">▸</span>
+                                <span>Currently reading: [Book Title]</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Timeline -->
+                <div class="mt-16">
+                    <h3 class="text-2xl font-bold mb-8 text-center">Journey So Far</h3>
+                    <div class="space-y-8">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-3 h-3 bg-cream-600 dark:bg-cream-400 rounded-full mt-2 mr-6"></div>
+                            <div>
+                                <h4 class="font-bold">2024 - Present</h4>
+                                <p class="text-gray-600 dark:text-cream-400">Building amazing things and sharing thoughts</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-3 h-3 bg-cream-600 dark:bg-cream-400 rounded-full mt-2 mr-6"></div>
+                            <div>
+                                <h4 class="font-bold">2023</h4>
+                                <p class="text-gray-600 dark:text-cream-400">Started my journey as [Your Role]</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 w-3 h-3 bg-cream-600 dark:bg-cream-400 rounded-full mt-2 mr-6"></div>
+                            <div>
+                                <h4 class="font-bold">Earlier</h4>
+                                <p class="text-gray-600 dark:text-cream-400">The foundations were laid...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="py-20 bg-cream-100 dark:bg-[#111111]">
+            <div class="max-w-4xl mx-auto px-6 text-center">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">
+                    <span class="text-cream-600 dark:text-cream-400">&lt;</span>Contact<span class="text-cream-600 dark:text-cream-400">/&gt;</span>
+                </h2>
+                <p class="text-lg text-gray-600 dark:text-cream-300 mb-12 max-w-2xl mx-auto">
+                    Have an interesting project? Want to discuss philosophy over coffee? 
+                    Or just want to say hello? I'd love to hear from you.
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                    <a href="mailto:your.email@example.com" class="contact-card group">
+                        <div class="text-cream-600 dark:text-cream-400 mb-4 group-hover:scale-110 transition-transform">
+                            <svg class="w-8 h-8 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="font-bold">Email</h3>
+                        <p class="text-sm text-gray-600 dark:text-cream-400">your.email@example.com</p>
+                    </a>
+                    
+                    <a href="https://github.com/yourusername" target="_blank" class="contact-card group">
+                        <div class="text-cream-600 dark:text-cream-400 mb-4 group-hover:scale-110 transition-transform">
+                            <svg class="w-8 h-8 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <h3 class="font-bold">GitHub</h3>
+                        <p class="text-sm text-gray-600 dark:text-cream-400">@yourusername</p>
+                    </a>
+                    
+                    <a href="https://linkedin.com/in/yourusername" target="_blank" class="contact-card group">
+                        <div class="text-cream-600 dark:text-cream-400 mb-4 group-hover:scale-110 transition-transform">
+                            <svg class="w-8 h-8 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.338 16.338H13.67V12.16c0-.995-.017-2.277-1.387-2.277-1.39 0-1.601 1.086-1.601 2.207v4.248H8.014v-8.59h2.559v1.174h.037c.356-.675 1.227-1.387 2.526-1.387 2.703 0 3.203 1.778 3.203 4.092v4.711zM5.005 6.575a1.548 1.548 0 11-.003-3.096 1.548 1.548 0 01.003 3.096zm-1.337 9.763H6.34v-8.59H3.667v8.59zM17.668 1H2.328C1.595 1 1 1.581 1 2.298v15.403C1 18.418 1.595 19 2.328 19h15.34c.734 0 1.332-.582 1.332-1.299V2.298C19 1.581 18.402 1 17.668 1z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <h3 class="font-bold">LinkedIn</h3>
+                        <p class="text-sm text-gray-600 dark:text-cream-400">@yourusername</p>
+                    </a>
+                </div>
+                
+                <div class="bg-white dark:bg-[#1a1a1a] p-8 rounded-2xl border border-cream-200 dark:border-cream-600 max-w-2xl mx-auto">
+                    <h3 class="text-xl font-bold mb-4">Quick Message</h3>
+                    <p class="text-gray-600 dark:text-cream-400 mb-4">
+                        Want to send a quick message? Just click the email link above or reach out on any platform. 
+                        I typically respond within 24 hours.
+                    </p>
+                    <p class="text-sm text-gray-500 dark:text-cream-400">
+                        "The best conversations happen when minds meet." - Me, probably
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-cream-200 dark:bg-[#111111] py-8">
+        <div class="max-w-6xl mx-auto px-6 text-center">
+            <p class="text-gray-600 dark:text-cream-400">
+                &copy; 2024 Your Name. Built with curiosity and lots of ☕
+            </p>
+            <p class="text-sm text-gray-500 dark:text-cream-400 mt-2">
+                Made with ❤️ using HTML, CSS, and a sprinkle of JavaScript magic
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+</body>
+</html> 

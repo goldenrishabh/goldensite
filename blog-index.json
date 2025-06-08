@@ -1,0 +1,31 @@
+{
+  "categories": {
+    "philosophical": {
+      "name": "Philosophical",
+      "description": "Deep thoughts, ethics, life reflections",
+      "color": "purple"
+    },
+    "technical": {
+      "name": "Technical",
+      "description": "Programming, tutorials, technical insights",
+      "color": "blue"
+    }
+  },
+  "posts": [
+    {
+      "id": "async-await-patterns",
+      "category": "technical",
+      "file": "blog/technical/async-await-patterns.md"
+    },
+    {
+      "id": "meaning-of-code",
+      "category": "philosophical",
+      "file": "blog/philosophical/meaning-of-code.md"
+    },
+    {
+      "id": "digital-minimalism",
+      "category": "philosophical",
+      "file": "blog/philosophical/digital-minimalism.md"
+    }
+  ]
+}
