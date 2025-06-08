@@ -14,6 +14,7 @@ const path = require('path');
 
 const BLOG_DIR = './blog';
 const OUTPUT_FILE = './blog-index.json';
+const REPO_NAME = 'goldensite'; // Your repository name
 
 // Default category configurations
 const DEFAULT_CATEGORIES = {
@@ -96,7 +97,7 @@ function scanBlogDirectory() {
         
         files.forEach(file => {
             const filePath = path.join(categoryPath, file);
-            const relativePath = './' + path.join('blog', categoryDir, file).replace(/\\/g, '/');
+            const relativePath = path.join('/', REPO_NAME, 'blog', categoryDir, file).replace(/\\/g, '/');
             
             try {
                 const content = fs.readFileSync(filePath, 'utf8');
