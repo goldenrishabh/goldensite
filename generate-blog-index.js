@@ -96,7 +96,7 @@ function scanBlogDirectory() {
         
         files.forEach(file => {
             const filePath = path.join(categoryPath, file);
-            const relativePath = path.join('blog', categoryDir, file).replace(/\\/g, '/');
+            const relativePath = './' + path.join('blog', categoryDir, file).replace(/\\/g, '/');
             
             try {
                 const content = fs.readFileSync(filePath, 'utf8');
