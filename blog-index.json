@@ -1,5 +1,10 @@
 {
   "categories": {
+    "adventure": {
+      "name": "Adventure",
+      "description": "Posts about adventure",
+      "color": "gray"
+    },
     "philosophical": {
       "name": "Philosophical",
       "description": "Deep thoughts, ethics, life reflections",
@@ -12,6 +17,11 @@
     }
   },
   "posts": [
+    {
+      "id": "the-northern-land",
+      "category": "adventure",
+      "file": "static-blog/adventure/the-northern-land.txt"
+    },
     {
       "id": "async-await-patterns",
       "category": "technical",
