@@ -15,17 +15,17 @@
     {
       "id": "async-await-patterns",
       "category": "technical",
-      "file": "blog/technical/async-await-patterns.md"
+      "file": "static-blog/technical/async-await-patterns.txt"
     },
     {
       "id": "meaning-of-code",
       "category": "philosophical",
-      "file": "blog/philosophical/meaning-of-code.md"
+      "file": "static-blog/philosophical/meaning-of-code.txt"
     },
     {
       "id": "digital-minimalism",
       "category": "philosophical",
-      "file": "blog/philosophical/digital-minimalism.md"
+      "file": "static-blog/philosophical/digital-minimalism.txt"
     }
   ]
 }

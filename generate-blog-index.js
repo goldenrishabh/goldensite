@@ -14,6 +14,7 @@ const path = require('path');
 
 const BLOG_DIR = './blog';
 const OUTPUT_FILE = './blog-index.json';
+const STATIC_BLOG_DIR = './static-blog'; // New directory for static blog files
 
 // Default category configurations
 const DEFAULT_CATEGORIES = {
@@ -69,6 +70,11 @@ function scanBlogDirectory() {
         process.exit(1);
     }
     
+    // Create static blog directory if it doesn't exist
+    if (!fs.existsSync(STATIC_BLOG_DIR)) {
+        fs.mkdirSync(STATIC_BLOG_DIR, { recursive: true });
+    }
+    
     const categories = {};
     const posts = [];
     
@@ -80,6 +86,12 @@ function scanBlogDirectory() {
     
     categoryDirs.forEach(categoryDir => {
         const categoryPath = path.join(BLOG_DIR, categoryDir);
+        const staticCategoryPath = path.join(STATIC_BLOG_DIR, categoryDir);
+        
+        // Create static category directory
+        if (!fs.existsSync(staticCategoryPath)) {
+            fs.mkdirSync(staticCategoryPath, { recursive: true });
+        }
         
         // Set up category configuration
         categories[categoryDir] = DEFAULT_CATEGORIES[categoryDir] || {
@@ -96,10 +108,16 @@ function scanBlogDirectory() {
         
         files.forEach(file => {
             const filePath = path.join(categoryPath, file);
-            const relativePath = path.join('blog', categoryDir, file).replace(/\\/g, '/');
+            const staticFileName = file.replace('.md', '.txt');
+            const staticFilePath = path.join(staticCategoryPath, staticFileName);
+            const relativePath = path.join('static-blog', categoryDir, staticFileName).replace(/\\/g, '/');
             
             try {
                 const content = fs.readFileSync(filePath, 'utf8');
+                
+                // Copy file to static directory with .txt extension
+                fs.writeFileSync(staticFilePath, content);
+                
                 const { frontmatter } = parseMarkdownFrontmatter(content);
                 
                 const postId = path.basename(file, '.md');
@@ -113,7 +131,7 @@ function scanBlogDirectory() {
                     date: frontmatter.date || new Date().toISOString().split('T')[0]
                 });
                 
-                console.log(`    ✓ ${file} (${frontmatter.title || 'No title'})`);
+                console.log(`    ✓ ${file} -> ${staticFileName} (${frontmatter.title || 'No title'})`);
             } catch (error) {
                 console.warn(`    ⚠ Failed to parse ${file}: ${error.message}`);
             }

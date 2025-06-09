@@ -1,0 +1,22 @@
+# Exclude original blog directory (source files)
+blog/
+
+# Keep the generated static blog files
+!static-blog/
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp 

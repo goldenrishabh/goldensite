@@ -1,0 +1,35 @@
+# GitHub Pages Configuration
+# This file tells GitHub Pages how to handle your site
+
+# Ensure markdown files are served as static content
+include:
+  - "*.md"
+  - "blog/**/*.md"
+
+# Set the source directory
+source: .
+
+# Disable Jekyll processing for raw markdown files
+markdown: kramdown
+highlighter: rouge
+
+# Ensure all files in blog directory are included
+keep_files:
+  - blog
+
+# Disable Jekyll for raw static site
+plugins: []
+
+# Make sure GitHub Pages serves markdown files with correct MIME type
+defaults:
+  - scope:
+      path: "blog"
+    values:
+      layout: null
+
+# Exclude files that shouldn't be published
+exclude:
+  - generate-blog-index.js
+  - README.md
+  - node_modules
+  - .git 
