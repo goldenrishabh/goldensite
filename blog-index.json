@@ -2,8 +2,8 @@
   "categories": {
     "adventure": {
       "name": "Adventure",
-      "description": "Posts about adventure",
-      "color": "gray"
+      "description": "Travel stories, outdoor adventures, and explorations",
+      "color": "orange"
     },
     "philosophical": {
       "name": "Philosophical",

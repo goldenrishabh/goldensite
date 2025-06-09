@@ -23,7 +23,8 @@ const DEFAULT_CATEGORIES = {
     random: { name: 'Random Thoughts', description: 'Casual observations, personal musings', color: 'green' },
     personal: { name: 'Personal', description: 'Personal experiences and stories', color: 'pink' },
     tutorials: { name: 'Tutorials', description: 'Step-by-step guides and how-tos', color: 'indigo' },
-    reviews: { name: 'Reviews', description: 'Book reviews, tool reviews, and opinions', color: 'yellow' }
+    reviews: { name: 'Reviews', description: 'Book reviews, tool reviews, and opinions', color: 'yellow' },
+    adventure: { name: 'Adventure', description: 'Travel stories, outdoor adventures, and explorations', color: 'orange' }
 };
 
 function parseMarkdownFrontmatter(content) {
@@ -105,6 +106,35 @@ function scanBlogDirectory() {
             .filter(file => file.endsWith('.md'));
         
         console.log(`  ${categoryDir}: ${files.length} post(s)`);
+        
+        // Copy image directories if they exist
+        const allItems = fs.readdirSync(categoryPath, { withFileTypes: true });
+        const imageDirs = allItems.filter(dirent => dirent.isDirectory() && dirent.name.startsWith('images-'));
+        
+        imageDirs.forEach(imageDir => {
+            const sourceDirPath = path.join(categoryPath, imageDir.name);
+            const targetDirPath = path.join(staticCategoryPath, imageDir.name);
+            
+            try {
+                // Create target image directory
+                if (!fs.existsSync(targetDirPath)) {
+                    fs.mkdirSync(targetDirPath, { recursive: true });
+                }
+                
+                // Copy all image files
+                const imageFiles = fs.readdirSync(sourceDirPath);
+                imageFiles.forEach(imageFile => {
+                    const sourceFilePath = path.join(sourceDirPath, imageFile);
+                    const targetFilePath = path.join(targetDirPath, imageFile);
+                    
+                    fs.copyFileSync(sourceFilePath, targetFilePath);
+                });
+                
+                console.log(`    📁 Copied ${imageDir.name} directory (${imageFiles.length} files)`);
+            } catch (error) {
+                console.warn(`    ⚠ Failed to copy ${imageDir.name}: ${error.message}`);
+            }
+        });
         
         files.forEach(file => {
             const filePath = path.join(categoryPath, file);
