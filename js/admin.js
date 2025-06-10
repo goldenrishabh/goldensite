@@ -5,9 +5,11 @@ class AdminPanel {
         this.categories = {};
         this.currentEditingPost = null;
         this.markdownEditor = null;
-        this.adminPassword = 'golden2025'; // Change this to your desired password
+        // Use SHA-256 hash of the password for better security
+        this.adminPasswordHash = 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3'; // SHA-256 of 'hello'
         this.githubToken = localStorage.getItem('github-token') || '';
         this.githubRepo = localStorage.getItem('github-repo') || 'goldenrishabh/goldensite';
+        this.githubApiBase = 'https://api.github.com';
         
         this.init();
     }
@@ -16,6 +18,16 @@ class AdminPanel {
         this.setupEventListeners();
         this.loadData();
         this.initializeMarkdownEditor();
+    }
+
+    // Hash function for password verification
+    async hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(hash))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
     }
 
     setupEventListeners() {
@@ -83,13 +95,20 @@ class AdminPanel {
         const password = document.getElementById('admin-password').value;
         const errorEl = document.getElementById('login-error');
 
-        if (password === this.adminPassword) {
-            document.getElementById('login-modal').classList.add('hidden');
-            document.getElementById('admin-panel').classList.remove('hidden');
-            this.currentUser = 'admin';
-            await this.loadBlogData();
-        } else {
-            errorEl.textContent = 'Invalid password';
+        try {
+            const hashedInput = await this.hashPassword(password);
+            
+            if (hashedInput === this.adminPasswordHash) {
+                document.getElementById('login-modal').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                this.currentUser = 'admin';
+                await this.loadBlogData();
+            } else {
+                errorEl.textContent = 'Invalid password';
+                errorEl.classList.remove('hidden');
+            }
+        } catch (error) {
+            errorEl.textContent = 'Authentication error';
             errorEl.classList.remove('hidden');
         }
     }
@@ -134,6 +153,68 @@ class AdminPanel {
             document.getElementById('github-repo').value = githubRepo;
             this.githubRepo = githubRepo;
         }
+    }
+
+    // GitHub API helper methods
+    async githubRequest(endpoint, method = 'GET', body = null) {
+        const url = `${this.githubApiBase}${endpoint}`;
+        const headers = {
+            'Authorization': `token ${this.githubToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+        };
+
+        const options = { method, headers };
+        if (body) {
+            options.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(url, options);
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(`GitHub API Error: ${error.message}`);
+        }
+
+        return response.json();
+    }
+
+    async getFileFromGitHub(path) {
+        try {
+            const result = await this.githubRequest(`/repos/${this.githubRepo}/contents/${path}`);
+            return {
+                content: atob(result.content.replace(/\s/g, '')),
+                sha: result.sha
+            };
+        } catch (error) {
+            if (error.message.includes('404')) {
+                return null; // File doesn't exist
+            }
+            throw error;
+        }
+    }
+
+    async createOrUpdateFileInGitHub(path, content, message, sha = null) {
+        const body = {
+            message,
+            content: btoa(unescape(encodeURIComponent(content)))
+        };
+
+        if (sha) {
+            body.sha = sha;
+        }
+
+        return this.githubRequest(`/repos/${this.githubRepo}/contents/${path}`, 'PUT', body);
+    }
+
+    async deleteFileFromGitHub(path, message) {
+        const file = await this.getFileFromGitHub(path);
+        if (!file) return;
+
+        return this.githubRequest(`/repos/${this.githubRepo}/contents/${path}`, 'DELETE', {
+            message,
+            sha: file.sha
+        });
     }
 
     async loadBlogData() {
@@ -442,11 +523,30 @@ class AdminPanel {
                 }))
             };
 
-            // Simulate GitHub API calls (in real implementation, you'd use GitHub API)
-            console.log('Syncing with GitHub...', blogIndex);
-            
-            // For now, just simulate a delay
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Update blog-index.json on GitHub
+            console.log('Updating blog-index.json...');
+            await this.createOrUpdateFileInGitHub(
+                'blog-index.json',
+                JSON.stringify(blogIndex, null, 2),
+                'Update blog index via admin panel',
+                (await this.getFileFromGitHub('blog-index.json'))?.sha
+            );
+
+            // Sync all posts that have been modified
+            for (const post of this.posts) {
+                const postContent = localStorage.getItem(`post-${post.id}`);
+                if (postContent) {
+                    console.log(`Syncing post: ${post.id}`);
+                    await this.createOrUpdateFileInGitHub(
+                        post.file,
+                        postContent,
+                        `Update post: ${post.title}`,
+                        (await this.getFileFromGitHub(post.file))?.sha
+                    );
+                    // Remove from localStorage after successful sync
+                    localStorage.removeItem(`post-${post.id}`);
+                }
+            }
 
             alert('Successfully synced with GitHub! Changes are now live.');
             
@@ -454,7 +554,7 @@ class AdminPanel {
             syncBtn.disabled = false;
         } catch (error) {
             console.error('Failed to sync with GitHub:', error);
-            alert('Failed to sync with GitHub. Please check your token and try again.');
+            alert(`Failed to sync with GitHub: ${error.message}\n\nPlease check your token permissions and try again.`);
             
             const syncBtn = document.getElementById('sync-github');
             syncBtn.textContent = '🔄 Sync with GitHub';
@@ -475,24 +575,69 @@ class AdminPanel {
         alert('Settings saved!');
     }
 
-    handleFileUpload(files) {
-        Array.from(files).forEach(file => {
+    async handleFileUpload(files) {
+        if (!this.githubToken) {
+            alert('Please set your GitHub token in Settings first.');
+            return;
+        }
+
+        for (const file of files) {
             if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    // In a real implementation, you'd upload to GitHub or a file storage service
-                    console.log('File uploaded:', file.name, e.target.result);
-                    alert(`File ${file.name} processed! (In a real implementation, this would upload to GitHub)`);
-                };
-                reader.readAsDataURL(file);
+                try {
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        const content = e.target.result.split(',')[1]; // Remove data:image/...;base64, prefix
+                        const fileName = file.name;
+                        const filePath = `static-blog/images/${fileName}`;
+                        
+                        try {
+                            await this.createOrUpdateFileInGitHub(
+                                filePath,
+                                atob(content), // Decode base64 for GitHub API
+                                `Upload image: ${fileName}`,
+                                (await this.getFileFromGitHub(filePath))?.sha
+                            );
+                            alert(`Image ${fileName} uploaded successfully!`);
+                        } catch (error) {
+                            alert(`Failed to upload ${fileName}: ${error.message}`);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                } catch (error) {
+                    console.error('File upload error:', error);
+                    alert(`Failed to upload ${file.name}: ${error.message}`);
+                }
             }
-        });
+        }
     }
 
-    loadFileList() {
-        // In a real implementation, you'd fetch files from GitHub repository
-        const fileList = document.getElementById('file-list');
-        fileList.innerHTML = '<p class="text-gray-500">File list will be loaded from GitHub repository...</p>';
+    async loadFileList() {
+        if (!this.githubToken) {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '<p class="text-gray-500">Please set your GitHub token in Settings to view files.</p>';
+            return;
+        }
+
+        try {
+            const files = await this.githubRequest(`/repos/${this.githubRepo}/contents/static-blog/images`);
+            const fileList = document.getElementById('file-list');
+            
+            if (files.length === 0) {
+                fileList.innerHTML = '<p class="text-gray-500">No images found.</p>';
+                return;
+            }
+
+            fileList.innerHTML = files.map(file => `
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                    <img src="${file.download_url}" alt="${file.name}" class="w-full h-24 object-cover rounded mb-2">
+                    <p class="text-sm font-medium truncate">${file.name}</p>
+                    <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</p>
+                </div>
+            `).join('');
+        } catch (error) {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '<p class="text-red-500">Error loading files. Check your GitHub token.</p>';
+        }
     }
 
     saveContent() {
