@@ -8,14 +8,41 @@ Your website now includes a powerful admin panel that allows you to manage your 
 
 1. **From your website**: Click the small ⚙️ icon in the footer
 2. **Direct URL**: Visit `yoursite.com/admin.html`
-3. **Password**: `hello` (secure hashed authentication)
+3. **Authentication**: Use your GitHub Personal Access Token (much more secure than passwords!)
 
 ## 🔒 Security Features
 
-- **Hashed Password Authentication**: Password is SHA-256 hashed, not stored in plain text
-- **GitHub Token Encryption**: Tokens stored securely in browser localStorage
+- **GitHub Token Authentication**: Uses your actual GitHub credentials for authentication
+- **Repository Permission Verification**: Checks that you have write access to the repository
+- **No Client-Side Secrets**: No hardcoded passwords visible in browser code
 - **Admin-Only Access**: Public site remains completely read-only for visitors
-- **Session Management**: Automatic logout and session security
+- **Session Management**: Secure token-based session handling
+
+## Authentication Setup
+
+### Getting Your GitHub Token
+
+1. Go to GitHub → Settings → Developer settings → Personal access tokens → **Tokens (classic)**
+2. Click **Generate new token (classic)**
+3. Give it a descriptive name: "Website Admin Panel"
+4. Select scopes:
+   - ✅ **repo** (Full control of private repositories)
+   - ✅ **public_repo** (Access public repositories) 
+5. Set expiration as needed (recommend: 90 days for security)
+6. Click **Generate token**
+7. **Copy the token immediately** (you won't see it again)
+
+### Logging In
+
+1. Open the admin panel (`yoursite.com/admin.html`)
+2. Enter your GitHub Personal Access Token in the first field
+3. Enter your repository name (`username/repository`) or leave the default
+4. Click **Verify & Access**
+
+The system will:
+- Verify your token with GitHub's API
+- Check that you have write access to the repository
+- Authenticate you if everything is valid
 
 ## Features
 
@@ -47,7 +74,7 @@ Your website now includes a powerful admin panel that allows you to manage your 
 
 ### ⚙️ Complete GitHub Integration
 - **Real GitHub API** integration (not simulated)
-- **Classic token** support for authentication
+- **Token-based authentication** for maximum security
 - **Automatic file creation/updates** on GitHub
 - **One-click sync** to publish all changes
 - **Error handling** with detailed messages
@@ -79,44 +106,23 @@ Your website now includes a powerful admin panel that allows you to manage your 
 ### Publishing Changes
 
 1. Make your changes (posts, content, etc.)
-2. Go to **Settings** and ensure your GitHub token is set
-3. Click **🔄 Sync with GitHub** in the header
-4. **Real GitHub API calls** will update your repository
-5. Changes will be live within minutes
+2. Click **🔄 Sync with GitHub** in the header
+3. **Real GitHub API calls** will update your repository
+4. Changes will be live within minutes
 
-## GitHub Integration Setup
-
-### Creating a GitHub Classic Personal Access Token
-
-1. Go to GitHub → Settings → Developer settings → Personal access tokens → **Tokens (classic)**
-2. Click **Generate new token (classic)**
-3. Give it a descriptive name: "Website Admin Panel"
-4. Select scopes:
-   - ✅ **repo** (Full control of private repositories)
-   - ✅ **public_repo** (Access public repositories) 
-   - ✅ **workflow** (Update GitHub Action workflows)
-5. Set expiration as needed (recommend: No expiration for convenience)
-6. Click **Generate token**
-7. **Copy the token immediately** (you won't see it again)
-8. Paste it in **Admin Panel → Settings → GitHub Token**
-
-### Repository Configuration
-
-- Set your repository in format: `username/repository-name`
-- Example: `goldenrishabh/goldensite`
-- Make sure you have **write access** to this repository
-
-## Real GitHub API Functionality
+## GitHub Integration Details
 
 ### What Actually Happens When You Sync:
 
-1. **Blog Index Update**: Updates `blog-index.json` on GitHub
-2. **Post Files**: Creates/updates `.txt` files in `static-blog/` directory
-3. **Image Uploads**: Uploads images to `static-blog/images/`
-4. **Commit Messages**: Automatic descriptive commit messages
-5. **Error Handling**: Detailed error messages if something fails
+1. **Authentication Check**: Verifies your token and repository access
+2. **Blog Index Update**: Updates `blog-index.json` on GitHub
+3. **Post Files**: Creates/updates `.txt` files in `static-blog/` directory
+4. **Image Uploads**: Uploads images to `static-blog/images/`
+5. **Commit Messages**: Automatic descriptive commit messages
+6. **Error Handling**: Detailed error messages if something fails
 
 ### API Endpoints Used:
+- `GET /repos/{owner}/{repo}` - Verify repository access
 - `GET /repos/{owner}/{repo}/contents/{path}` - Read files
 - `PUT /repos/{owner}/{repo}/contents/{path}` - Create/update files
 - `DELETE /repos/{owner}/{repo}/contents/{path}` - Delete files
@@ -141,45 +147,29 @@ The admin system works with your existing file structure:
 └── blog-index.json         # Blog metadata (auto-updated via API)
 ```
 
-## Security & Password Management
-
-### Current Password
-- **Password**: `hello`
-- **Security**: SHA-256 hashed in code
-- **Not visible** in browser developer tools
-
-### Changing the Password
-
-1. Generate SHA-256 hash of your new password
-2. Replace the hash in `js/admin.js`:
-```javascript
-// Find this line and replace the hash:
-this.adminPasswordHash = 'your-new-sha256-hash-here';
-```
-3. Commit and push the change
-
-### Generate SHA-256 Hash (using browser console):
-```javascript
-async function hashPassword(password) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hash = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hash))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-}
-
-// Usage: 
-hashPassword('your-new-password').then(console.log);
-```
-
 ## Troubleshooting
 
+### Authentication Issues
+
+**"Invalid GitHub token"**
+- Your token may be expired or incorrect
+- Generate a new classic token with 'repo' scope
+
+**"You need write access to this repository"**
+- Your token doesn't have push permissions to the repository
+- Make sure you own the repository or have collaborator access
+- Regenerate token with 'repo' scope
+
+**"Repository not found or not accessible"**
+- Check that the repository name is correct (`username/repository`)
+- Repository might be private and your token doesn't have access
+- Make sure the repository exists
+
 ### GitHub Sync Fails
-- ✅ Check your classic token permissions include `repo`
+- ✅ Check your token hasn't expired
 - ✅ Verify repository name is correct (`username/repo`)
 - ✅ Ensure you have write access to the repository
-- ✅ Check if token has expired
+- ✅ Check browser console for detailed error messages
 
 ### 403 Forbidden Error
 - Your token doesn't have sufficient permissions
@@ -194,9 +184,20 @@ hashPassword('your-new-password').then(console.log);
 - Ensure all files are uploaded correctly
 - Clear browser cache and try again
 
-### Authentication Fails
-- Make sure you're using the correct password
-- Try clearing browser localStorage: `localStorage.clear()`
+## Security Best Practices
+
+### Token Management
+- **Set expiration dates** for your tokens (recommend: 90 days)
+- **Regenerate tokens periodically** for better security
+- **Never share your token** with others
+- **Use descriptive names** when creating tokens
+- **Delete unused tokens** from GitHub settings
+
+### Repository Access
+- **Only use tokens with necessary permissions** (repo scope)
+- **Verify repository ownership** before entering credentials
+- **Use private repositories** for sensitive content
+- **Monitor repository access logs** in GitHub
 
 ## Tips
 
@@ -204,9 +205,10 @@ hashPassword('your-new-password').then(console.log);
 - **Use preview mode** to check formatting before syncing
 - **Sync regularly** to backup your work to GitHub
 - **Keep your GitHub token secure** and don't share it
-- **Set token expiration** based on your security requirements
+- **Set reasonable token expiration** based on your security requirements
 - **Test with a draft post** before publishing important content
+- **Monitor your GitHub notifications** for any unexpected activity
 
 ---
 
-🎉 **You now have a fully functional CMS with real GitHub integration!** 🚀 
+🎉 **You now have a fully functional CMS with secure GitHub token authentication!** 🚀 

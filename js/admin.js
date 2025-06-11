@@ -5,8 +5,7 @@ class AdminPanel {
         this.categories = {};
         this.currentEditingPost = null;
         this.markdownEditor = null;
-        // Use SHA-256 hash of the password for better security
-        this.adminPasswordHash = 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3'; // SHA-256 of 'hello'
+        // Remove password hash - we'll use GitHub token authentication instead
         this.githubToken = localStorage.getItem('github-token') || '';
         this.githubRepo = localStorage.getItem('github-repo') || 'goldenrishabh/goldensite';
         this.githubApiBase = 'https://api.github.com';
@@ -18,16 +17,6 @@ class AdminPanel {
         this.setupEventListeners();
         this.loadData();
         this.initializeMarkdownEditor();
-    }
-
-    // Hash function for password verification
-    async hashPassword(password) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(password);
-        const hash = await crypto.subtle.digest('SHA-256', data);
-        return Array.from(new Uint8Array(hash))
-            .map(b => b.toString(16).padStart(2, '0'))
-            .join('');
     }
 
     setupEventListeners() {
@@ -92,25 +81,74 @@ class AdminPanel {
     }
 
     async handleLogin() {
-        const password = document.getElementById('admin-password').value;
+        const token = document.getElementById('admin-password').value; // Using password field for token
+        const repoInput = document.getElementById('admin-repo').value || this.githubRepo;
         const errorEl = document.getElementById('login-error');
 
+        if (!token.trim()) {
+            errorEl.textContent = 'Please enter your GitHub token';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+
+        // Show loading state
+        const loginBtn = document.querySelector('#login-form button[type="submit"]');
+        const originalText = loginBtn.textContent;
+        loginBtn.textContent = 'Verifying...';
+        loginBtn.disabled = true;
+
         try {
-            const hashedInput = await this.hashPassword(password);
-            
-            if (hashedInput === this.adminPasswordHash) {
-                document.getElementById('login-modal').classList.add('hidden');
-                document.getElementById('admin-panel').classList.remove('hidden');
-                this.currentUser = 'admin';
-                await this.loadBlogData();
+            // Verify GitHub token by making a test API call
+            const response = await fetch(`${this.githubApiBase}/repos/${repoInput}`, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+
+            if (response.ok) {
+                const repoData = await response.json();
+                
+                // Check if user has write access (can push to repo)
+                if (repoData.permissions && (repoData.permissions.push || repoData.permissions.admin)) {
+                    // Authentication successful
+                    this.githubToken = token;
+                    this.githubRepo = repoInput;
+                    
+                    // Save credentials
+                    localStorage.setItem('github-token', token);
+                    localStorage.setItem('github-repo', repoInput);
+                    
+                    // Hide login modal and show admin panel
+                    document.getElementById('login-modal').classList.add('hidden');
+                    document.getElementById('admin-panel').classList.remove('hidden');
+                    this.currentUser = repoData.owner.login;
+                    
+                    // Load blog data
+                    await this.loadBlogData();
+                } else {
+                    errorEl.textContent = 'You need write access to this repository';
+                    errorEl.classList.remove('hidden');
+                }
+            } else if (response.status === 401) {
+                errorEl.textContent = 'Invalid GitHub token';
+                errorEl.classList.remove('hidden');
+            } else if (response.status === 404) {
+                errorEl.textContent = 'Repository not found or not accessible';
+                errorEl.classList.remove('hidden');
             } else {
-                errorEl.textContent = 'Invalid password';
+                errorEl.textContent = 'Authentication failed. Please check your token and repository.';
                 errorEl.classList.remove('hidden');
             }
         } catch (error) {
-            errorEl.textContent = 'Authentication error';
+            console.error('Authentication error:', error);
+            errorEl.textContent = 'Network error. Please check your connection and try again.';
             errorEl.classList.remove('hidden');
         }
+
+        // Reset button state
+        loginBtn.textContent = originalText;
+        loginBtn.disabled = false;
     }
 
     logout() {
@@ -118,6 +156,11 @@ class AdminPanel {
         document.getElementById('login-modal').classList.remove('hidden');
         document.getElementById('admin-panel').classList.add('hidden');
         document.getElementById('admin-password').value = '';
+        document.getElementById('admin-repo').value = '';
+        
+        // Optionally clear stored credentials
+        // localStorage.removeItem('github-token');
+        // localStorage.removeItem('github-repo');
     }
 
     switchTab(tabName) {
