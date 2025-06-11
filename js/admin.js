@@ -69,6 +69,11 @@ class AdminPanel {
             this.saveSettings();
         });
 
+        // Test GitHub connection
+        document.getElementById('test-github').addEventListener('click', () => {
+            this.testGitHubConnection();
+        });
+
         // File upload
         document.getElementById('file-upload').addEventListener('change', (e) => {
             this.handleFileUpload(e.target.files);
@@ -230,9 +235,13 @@ class AdminPanel {
                 sha: result.sha
             };
         } catch (error) {
-            if (error.message.includes('404')) {
-                return null; // File doesn't exist
+            if (error.message.includes('404') || error.message.includes('Not Found')) {
+                // File doesn't exist - this is expected for new files
+                console.log(`File ${path} doesn't exist yet (this is normal for new files)`);
+                return null;
             }
+            // Re-throw other errors (like 401, 403, etc.)
+            console.error(`Error getting file ${path}:`, error);
             throw error;
         }
     }
@@ -556,6 +565,21 @@ class AdminPanel {
             syncBtn.textContent = '🔄 Syncing...';
             syncBtn.disabled = true;
 
+            // First, test authentication by checking repository access
+            console.log('Testing GitHub authentication...');
+            try {
+                await this.githubRequest(`/repos/${this.githubRepo}`);
+                console.log('✅ Authentication successful');
+            } catch (authError) {
+                if (authError.message.includes('401')) {
+                    throw new Error('Invalid GitHub token. Please check your token in Settings and make sure it has "repo" permissions.');
+                } else if (authError.message.includes('404')) {
+                    throw new Error(`Repository "${this.githubRepo}" not found. Please check the repository name in Settings.`);
+                } else {
+                    throw new Error(`Authentication failed: ${authError.message}`);
+                }
+            }
+
             // Generate new blog-index.json
             const blogIndex = {
                 categories: this.categories,
@@ -568,36 +592,98 @@ class AdminPanel {
 
             // Update blog-index.json on GitHub
             console.log('Updating blog-index.json...');
-            await this.createOrUpdateFileInGitHub(
-                'blog-index.json',
-                JSON.stringify(blogIndex, null, 2),
-                'Update blog index via admin panel',
-                (await this.getFileFromGitHub('blog-index.json'))?.sha
-            );
+            try {
+                const existingFile = await this.getFileFromGitHub('blog-index.json');
+                await this.createOrUpdateFileInGitHub(
+                    'blog-index.json',
+                    JSON.stringify(blogIndex, null, 2),
+                    'Update blog index via admin panel',
+                    existingFile?.sha
+                );
+                console.log('✅ Blog index updated');
+            } catch (error) {
+                console.error('Failed to update blog-index.json:', error);
+                throw new Error(`Failed to update blog index: ${error.message}`);
+            }
 
             // Sync all posts that have been modified
+            let syncedPosts = 0;
+            let failedPosts = 0;
+            
             for (const post of this.posts) {
                 const postContent = localStorage.getItem(`post-${post.id}`);
                 if (postContent) {
-                    console.log(`Syncing post: ${post.id}`);
-                    await this.createOrUpdateFileInGitHub(
-                        post.file,
-                        postContent,
-                        `Update post: ${post.title}`,
-                        (await this.getFileFromGitHub(post.file))?.sha
-                    );
-                    // Remove from localStorage after successful sync
-                    localStorage.removeItem(`post-${post.id}`);
+                    try {
+                        console.log(`Syncing post: ${post.id}`);
+                        const existingFile = await this.getFileFromGitHub(post.file);
+                        await this.createOrUpdateFileInGitHub(
+                            post.file,
+                            postContent,
+                            `Update post: ${post.title}`,
+                            existingFile?.sha
+                        );
+                        // Remove from localStorage after successful sync
+                        localStorage.removeItem(`post-${post.id}`);
+                        syncedPosts++;
+                        console.log(`✅ Synced: ${post.id}`);
+                    } catch (error) {
+                        console.error(`Failed to sync post ${post.id}:`, error);
+                        failedPosts++;
+                    }
                 }
             }
 
-            alert('Successfully synced with GitHub! Changes are now live.');
+            // Show success message with details
+            let message = 'Successfully synced with GitHub!';
+            if (syncedPosts > 0) {
+                message += `\n\n📝 ${syncedPosts} post(s) synced`;
+            }
+            if (failedPosts > 0) {
+                message += `\n⚠️ ${failedPosts} post(s) failed to sync`;
+            }
+            message += '\n\n🚀 Changes are now live on your website!';
+            
+            alert(message);
             
             syncBtn.textContent = originalText;
             syncBtn.disabled = false;
         } catch (error) {
             console.error('Failed to sync with GitHub:', error);
-            alert(`Failed to sync with GitHub: ${error.message}\n\nPlease check your token permissions and try again.`);
+            
+            // Provide helpful error messages based on the error type
+            let errorMessage = 'Failed to sync with GitHub:\n\n';
+            
+            if (error.message.includes('Invalid GitHub token')) {
+                errorMessage += '🔐 Authentication Error:\n';
+                errorMessage += error.message + '\n\n';
+                errorMessage += '💡 To fix this:\n';
+                errorMessage += '1. Go to GitHub Settings → Developer settings → Personal access tokens\n';
+                errorMessage += '2. Generate a new classic token with "repo" scope\n';
+                errorMessage += '3. Update your token in the Settings tab';
+            } else if (error.message.includes('not found')) {
+                errorMessage += '📁 Repository Error:\n';
+                errorMessage += error.message + '\n\n';
+                errorMessage += '💡 To fix this:\n';
+                errorMessage += '1. Check the repository name in Settings\n';
+                errorMessage += '2. Make sure the repository exists\n';
+                errorMessage += '3. Ensure your token has access to this repository';
+            } else if (error.message.includes('403')) {
+                errorMessage += '🚫 Permission Error:\n';
+                errorMessage += 'You don\'t have write access to this repository.\n\n';
+                errorMessage += '💡 To fix this:\n';
+                errorMessage += '1. Make sure you own the repository\n';
+                errorMessage += '2. Or ask the owner to add you as a collaborator\n';
+                errorMessage += '3. Regenerate your token with "repo" scope';
+            } else {
+                errorMessage += '❌ Sync Error:\n';
+                errorMessage += error.message + '\n\n';
+                errorMessage += '💡 Please check:\n';
+                errorMessage += '1. Your internet connection\n';
+                errorMessage += '2. GitHub token permissions\n';
+                errorMessage += '3. Repository settings';
+            }
+            
+            alert(errorMessage);
             
             const syncBtn = document.getElementById('sync-github');
             syncBtn.textContent = '🔄 Sync with GitHub';
@@ -700,6 +786,113 @@ class AdminPanel {
         });
 
         alert('Content saved! Click "Sync with GitHub" to publish changes.');
+    }
+
+    async testGitHubConnection() {
+        const token = document.getElementById('github-token').value || this.githubToken;
+        const repo = document.getElementById('github-repo').value || this.githubRepo;
+        
+        if (!token) {
+            alert('Please enter a GitHub token first.');
+            return;
+        }
+
+        // Show loading state
+        const testBtn = document.getElementById('test-github');
+        const originalText = testBtn.textContent;
+        testBtn.textContent = '🔄 Testing...';
+        testBtn.disabled = true;
+
+        try {
+            // Test 1: User authentication
+            console.log('Testing user authentication...');
+            const userResponse = await fetch(`${this.githubApiBase}/user`, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+
+            if (!userResponse.ok) {
+                if (userResponse.status === 401) {
+                    throw new Error('Invalid GitHub token. Please check your token.');
+                } else {
+                    throw new Error(`GitHub API error: ${userResponse.status}`);
+                }
+            }
+
+            const userData = await userResponse.json();
+            console.log('✅ User authentication successful:', userData.login);
+
+            // Test 2: Repository access
+            console.log('Testing repository access...');
+            const repoResponse = await fetch(`${this.githubApiBase}/repos/${repo}`, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+
+            if (!repoResponse.ok) {
+                if (repoResponse.status === 404) {
+                    throw new Error(`Repository "${repo}" not found or not accessible.`);
+                } else if (repoResponse.status === 403) {
+                    throw new Error(`Access denied to repository "${repo}". Check permissions.`);
+                } else {
+                    throw new Error(`Repository access error: ${repoResponse.status}`);
+                }
+            }
+
+            const repoData = await repoResponse.json();
+            console.log('✅ Repository access successful');
+
+            // Check write permissions
+            const hasWriteAccess = repoData.permissions && (repoData.permissions.push || repoData.permissions.admin);
+            
+            let message = `🎉 GitHub Connection Test Successful!\n\n`;
+            message += `👤 Authenticated as: ${userData.login}\n`;
+            message += `📁 Repository: ${repoData.full_name}\n`;
+            message += `🔒 Write Access: ${hasWriteAccess ? '✅ Yes' : '❌ No'}\n\n`;
+            
+            if (!hasWriteAccess) {
+                message += `⚠️ Warning: You don't have write access to this repository.\n`;
+                message += `You won't be able to sync changes until you get push permissions.`;
+            } else {
+                message += `✅ Everything looks good! You can sync changes to GitHub.`;
+            }
+
+            alert(message);
+            
+        } catch (error) {
+            console.error('GitHub connection test failed:', error);
+            
+            let errorMessage = '❌ GitHub Connection Test Failed\n\n';
+            if (error.message.includes('Invalid GitHub token')) {
+                errorMessage += '🔐 Token Error:\n';
+                errorMessage += error.message + '\n\n';
+                errorMessage += '💡 To fix:\n';
+                errorMessage += '1. Go to GitHub Settings → Developer settings → Personal access tokens\n';
+                errorMessage += '2. Generate new classic token with "repo" scope\n';
+                errorMessage += '3. Copy and paste the token here';
+            } else if (error.message.includes('not found')) {
+                errorMessage += '📁 Repository Error:\n';
+                errorMessage += error.message + '\n\n';
+                errorMessage += '💡 To fix:\n';
+                errorMessage += '1. Check repository name format: username/repository\n';
+                errorMessage += '2. Make sure repository exists\n';
+                errorMessage += '3. Verify you have access to the repository';
+            } else {
+                errorMessage += '🌐 Connection Error:\n';
+                errorMessage += error.message + '\n\n';
+                errorMessage += '💡 Please check your internet connection and try again.';
+            }
+            
+            alert(errorMessage);
+        }
+
+        // Reset button state
+        testBtn.textContent = originalText;
+        testBtn.disabled = false;
     }
 }
 
