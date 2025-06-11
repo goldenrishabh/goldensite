@@ -23,19 +23,9 @@
       "file": "static-blog/adventure/the-northern-land.txt"
     },
     {
-      "id": "async-await-patterns",
-      "category": "technical",
-      "file": "static-blog/technical/async-await-patterns.txt"
-    },
-    {
-      "id": "meaning-of-code",
-      "category": "philosophical",
-      "file": "static-blog/philosophical/meaning-of-code.txt"
-    },
-    {
       "id": "digital-minimalism",
-      "category": "philosophical",
-      "file": "static-blog/philosophical/digital-minimalism.txt"
+      "category": "technical",
+      "file": "static-blog/technical/digital-minimalism.txt"
     }
   ]
 }
