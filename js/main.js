@@ -677,7 +677,7 @@ class PersonalWebsite {
 
 // Initialize the website when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new PersonalWebsite();
+    window.personalWebsite = new PersonalWebsite();
 });
 
 // Handle page reload/refresh state

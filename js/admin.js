@@ -219,6 +219,13 @@ class AdminPanel {
 
         await this.loadBlogData();
         this.populateCategoryDropdown();
+        
+        // Refresh category buttons and dropdowns on main site if needed
+        if (window.personalWebsite && window.personalWebsite.updateCategoryButtons) {
+            window.personalWebsite.categories = this.categories;
+            window.personalWebsite.updateCategoryButtons();
+            window.personalWebsite.updateNavDropdown();
+        }
     }
 
     // GitHub API helper methods
@@ -303,7 +310,7 @@ class AdminPanel {
             const response = await fetch('./blog-index.json');
             const data = await response.json();
             
-            this.categories = data.categories;
+            this.categories = data.categories || {};
             this.posts = [];
 
             // Load each post
@@ -325,10 +332,44 @@ class AdminPanel {
                 }
             }
 
+            // Auto-detect missing categories from posts
+            this.autoDetectMissingCategories();
+
             this.renderPostsList();
         } catch (error) {
             console.error('Failed to load blog data:', error);
         }
+    }
+
+    autoDetectMissingCategories() {
+        // Collect all categories used in posts
+        const usedCategories = new Set();
+        this.posts.forEach(post => {
+            if (post.category) {
+                usedCategories.add(post.category);
+            }
+        });
+
+        // Add missing categories with default settings
+        usedCategories.forEach(categoryKey => {
+            if (!this.categories[categoryKey]) {
+                console.log(`Auto-detecting category: ${categoryKey}`);
+                this.categories[categoryKey] = {
+                    name: this.capitalizeWords(categoryKey.replace(/-/g, ' ')),
+                    description: `${this.capitalizeWords(categoryKey.replace(/-/g, ' '))} posts`,
+                    color: this.getRandomColor()
+                };
+            }
+        });
+    }
+
+    capitalizeWords(str) {
+        return str.replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    getRandomColor() {
+        const colors = ['blue', 'purple', 'orange', 'green', 'pink', 'red', 'yellow', 'gray'];
+        return colors[Math.floor(Math.random() * colors.length)];
     }
 
     parseMarkdownWithFrontmatter(markdown) {
@@ -520,6 +561,13 @@ class AdminPanel {
         // Hide custom input
         document.getElementById('custom-category-container').style.display = 'none';
         
+        // Update main site categories if admin is opened in same window
+        if (window.personalWebsite && window.personalWebsite.updateCategoryButtons) {
+            window.personalWebsite.categories = this.categories;
+            window.personalWebsite.updateCategoryButtons();
+            window.personalWebsite.updateNavDropdown();
+        }
+        
         // Create directory if it doesn't exist (this will be done when syncing with GitHub)
         alert(`Category "${name}" added! Don't forget to sync with GitHub to create the directory structure.`);
     }
@@ -539,6 +587,7 @@ class AdminPanel {
             document.getElementById('post-title').value = post.title || '';
             document.getElementById('post-category').value = post.category || 'technical';
             document.getElementById('post-excerpt').value = post.excerpt || '';
+            document.getElementById('post-date').value = post.date || '';
             document.getElementById('post-tags').value = Array.isArray(post.tags) ? post.tags.join(', ') : (post.tags || '');
             document.getElementById('post-read-time').value = post.readTime || '';
             
@@ -555,6 +604,7 @@ class AdminPanel {
             document.getElementById('post-title').value = '';
             document.getElementById('post-category').value = 'technical';
             document.getElementById('post-excerpt').value = '';
+            document.getElementById('post-date').value = new Date().toISOString().split('T')[0]; // Default to today
             document.getElementById('post-tags').value = '';
             document.getElementById('post-read-time').value = '';
             
@@ -577,6 +627,7 @@ class AdminPanel {
         const title = document.getElementById('post-title').value;
         const category = document.getElementById('post-category').value;
         const excerpt = document.getElementById('post-excerpt').value;
+        const date = document.getElementById('post-date').value;
         const tags = document.getElementById('post-tags').value;
         const readTime = document.getElementById('post-read-time').value;
         const content = this.markdownEditor ? this.markdownEditor.value() : document.getElementById('post-content').value;
@@ -587,13 +638,13 @@ class AdminPanel {
         }
 
         const id = this.currentEditingPost || this.generatePostId(title);
-        const date = new Date().toISOString().split('T')[0];
+        const finalDate = date || new Date().toISOString().split('T')[0]; // Use provided date or today
 
         const frontmatter = {
             title,
             excerpt,
             category,
-            date,
+            date: finalDate,
             readTime,
             tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag)
         };
