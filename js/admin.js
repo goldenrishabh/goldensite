@@ -249,7 +249,8 @@ class AdminPanel {
     async createOrUpdateFileInGitHub(path, content, message, sha = null) {
         const body = {
             message,
-            content: btoa(unescape(encodeURIComponent(content)))
+            // If content is already base64 (for images), use it directly, otherwise encode it
+            content: this.isBase64(content) ? content : btoa(unescape(encodeURIComponent(content)))
         };
 
         if (sha) {
@@ -257,6 +258,15 @@ class AdminPanel {
         }
 
         return this.githubRequest(`/repos/${this.githubRepo}/contents/${path}`, 'PUT', body);
+    }
+
+    isBase64(str) {
+        try {
+            // Check if string looks like base64 and can be decoded
+            return btoa(atob(str)) === str;
+        } catch (err) {
+            return false;
+        }
     }
 
     async deleteFileFromGitHub(path, message) {
@@ -722,7 +732,7 @@ class AdminPanel {
                         try {
                             await this.createOrUpdateFileInGitHub(
                                 filePath,
-                                atob(content), // Decode base64 for GitHub API
+                                content, // Keep as base64 for GitHub API
                                 `Upload image: ${fileName}`,
                                 (await this.getFileFromGitHub(filePath))?.sha
                             );
@@ -751,12 +761,23 @@ class AdminPanel {
             const files = await this.githubRequest(`/repos/${this.githubRepo}/contents/static-blog/images`);
             const fileList = document.getElementById('file-list');
             
-            if (files.length === 0) {
-                fileList.innerHTML = '<p class="text-gray-500">No images found.</p>';
+            if (!files || files.length === 0) {
+                fileList.innerHTML = '<p class="text-gray-500">No images found. Upload some images to get started!</p>';
                 return;
             }
 
-            fileList.innerHTML = files.map(file => `
+            // Filter out non-image files like README.md
+            const imageFiles = files.filter(file => 
+                file.type === 'file' && 
+                file.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)
+            );
+
+            if (imageFiles.length === 0) {
+                fileList.innerHTML = '<p class="text-gray-500">No image files found. Upload some images to get started!</p>';
+                return;
+            }
+
+            fileList.innerHTML = imageFiles.map(file => `
                 <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                     <img src="${file.download_url}" alt="${file.name}" class="w-full h-24 object-cover rounded mb-2">
                     <p class="text-sm font-medium truncate">${file.name}</p>
@@ -764,8 +785,13 @@ class AdminPanel {
                 </div>
             `).join('');
         } catch (error) {
+            console.error('Error loading file list:', error);
             const fileList = document.getElementById('file-list');
-            fileList.innerHTML = '<p class="text-red-500">Error loading files. Check your GitHub token.</p>';
+            if (error.message && error.message.includes('404')) {
+                fileList.innerHTML = '<p class="text-red-500">Images directory not found. It will be created when you upload your first image.</p>';
+            } else {
+                fileList.innerHTML = '<p class="text-red-500">Error loading files. Check your GitHub token and repository access.</p>';
+            }
         }
     }
 
