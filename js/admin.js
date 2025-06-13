@@ -83,6 +83,21 @@ class AdminPanel {
         document.getElementById('save-content').addEventListener('click', () => {
             this.saveContent();
         });
+
+        // Category change handler - will be attached to select element after it's created
+        this.setupCategoryChangeListener();
+    }
+
+    setupCategoryChangeListener() {
+        // Set up with a delay to ensure the dropdown is populated
+        setTimeout(() => {
+            const categorySelect = document.getElementById('post-category');
+            if (categorySelect) {
+                categorySelect.addEventListener('change', () => {
+                    this.handleCategoryChange();
+                });
+            }
+        }, 100);
     }
 
     async handleLogin() {
@@ -201,6 +216,9 @@ class AdminPanel {
             document.getElementById('github-repo').value = githubRepo;
             this.githubRepo = githubRepo;
         }
+
+        await this.loadBlogData();
+        this.populateCategoryDropdown();
     }
 
     // GitHub API helper methods
@@ -377,6 +395,12 @@ class AdminPanel {
     }
 
     getCategoryColor(category) {
+        // Try to get color from the categories definition first
+        if (this.categories && this.categories[category] && this.categories[category].color) {
+            return this.categories[category].color;
+        }
+        
+        // Fallback to hardcoded colors
         const colors = {
             technical: 'blue',
             philosophical: 'purple',
@@ -385,6 +409,119 @@ class AdminPanel {
             personal: 'pink'
         };
         return colors[category] || 'gray';
+    }
+
+    populateCategoryDropdown() {
+        const categorySelect = document.getElementById('post-category');
+        if (!categorySelect) return;
+
+        // Clear existing options
+        categorySelect.innerHTML = '';
+
+        // Add default categories from blog-index.json
+        if (this.categories) {
+            Object.entries(this.categories).forEach(([key, categoryInfo]) => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = categoryInfo.name;
+                categorySelect.appendChild(option);
+            });
+        }
+
+        // Add option for custom category
+        const customOption = document.createElement('option');
+        customOption.value = 'custom';
+        customOption.textContent = '+ Add New Category';
+        categorySelect.appendChild(customOption);
+    }
+
+    async handleCategoryChange() {
+        const categorySelect = document.getElementById('post-category');
+        const customCategoryContainer = document.getElementById('custom-category-container');
+        
+        if (categorySelect.value === 'custom') {
+            // Show custom category input
+            if (!customCategoryContainer) {
+                this.createCustomCategoryInput();
+            } else {
+                customCategoryContainer.style.display = 'block';
+            }
+        } else {
+            // Hide custom category input
+            if (customCategoryContainer) {
+                customCategoryContainer.style.display = 'none';
+            }
+        }
+    }
+
+    createCustomCategoryInput() {
+        const categoryContainer = document.getElementById('post-category').parentElement;
+        
+        const customContainer = document.createElement('div');
+        customContainer.id = 'custom-category-container';
+        customContainer.className = 'mt-2 space-y-2';
+        
+        customContainer.innerHTML = `
+            <input type="text" id="custom-category-key" class="admin-input" placeholder="Category key (e.g., 'random-thoughts')">
+            <input type="text" id="custom-category-name" class="admin-input" placeholder="Display name (e.g., 'Random Thoughts')">
+            <input type="text" id="custom-category-description" class="admin-input" placeholder="Description (optional)">
+            <select id="custom-category-color" class="admin-select">
+                <option value="blue">Blue</option>
+                <option value="purple">Purple</option>
+                <option value="orange">Orange</option>
+                <option value="green">Green</option>
+                <option value="pink">Pink</option>
+                <option value="red">Red</option>
+                <option value="yellow">Yellow</option>
+                <option value="gray">Gray</option>
+            </select>
+            <button type="button" id="add-category-btn" class="admin-btn admin-btn-secondary">Add Category</button>
+        `;
+        
+        categoryContainer.appendChild(customContainer);
+        
+        // Add event listener for the add category button
+        document.getElementById('add-category-btn').addEventListener('click', () => this.addNewCategory());
+    }
+
+    async addNewCategory() {
+        const keyInput = document.getElementById('custom-category-key');
+        const nameInput = document.getElementById('custom-category-name');
+        const descriptionInput = document.getElementById('custom-category-description');
+        const colorSelect = document.getElementById('custom-category-color');
+        
+        const key = keyInput.value.trim().toLowerCase().replace(/\s+/g, '-');
+        const name = nameInput.value.trim();
+        const description = descriptionInput.value.trim() || `${name} posts`;
+        const color = colorSelect.value;
+        
+        if (!key || !name) {
+            alert('Please provide both category key and name.');
+            return;
+        }
+        
+        // Add to categories object
+        if (!this.categories) {
+            this.categories = {};
+        }
+        
+        this.categories[key] = {
+            name,
+            description,
+            color
+        };
+        
+        // Update the dropdown
+        this.populateCategoryDropdown();
+        
+        // Select the new category
+        document.getElementById('post-category').value = key;
+        
+        // Hide custom input
+        document.getElementById('custom-category-container').style.display = 'none';
+        
+        // Create directory if it doesn't exist (this will be done when syncing with GitHub)
+        alert(`Category "${name}" added! Don't forget to sync with GitHub to create the directory structure.`);
     }
 
     openPostEditor(postId = null) {
@@ -614,6 +751,33 @@ class AdminPanel {
             } catch (error) {
                 console.error('Failed to update blog-index.json:', error);
                 throw new Error(`Failed to update blog index: ${error.message}`);
+            }
+
+            // Create category directories if needed
+            console.log('Checking category directories...');
+            for (const [categoryKey, categoryInfo] of Object.entries(this.categories)) {
+                try {
+                    const categoryPath = `static-blog/${categoryKey}`;
+                    // Try to get the directory - if it fails, we'll create a README to establish it
+                    try {
+                        await this.githubRequest(`/repos/${this.githubRepo}/contents/${categoryPath}`);
+                        console.log(`✅ Category directory exists: ${categoryKey}`);
+                    } catch (error) {
+                        if (error.message.includes('404')) {
+                            // Directory doesn't exist, create it with a README
+                            console.log(`Creating directory for category: ${categoryKey}`);
+                            const readmeContent = `# ${categoryInfo.name}\n\n${categoryInfo.description}\n\nThis directory contains ${categoryInfo.name} blog posts.`;
+                            await this.createOrUpdateFileInGitHub(
+                                `${categoryPath}/README.md`,
+                                readmeContent,
+                                `Create ${categoryInfo.name} category directory`
+                            );
+                            console.log(`✅ Created directory: ${categoryKey}`);
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Failed to create directory for category ${categoryKey}:`, error);
+                }
             }
 
             // Sync all posts that have been modified

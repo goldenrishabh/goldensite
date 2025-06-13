@@ -208,13 +208,15 @@ class PersonalWebsite {
     }
     
     updateCategoryButtons() {
-        const categoryContainer = document.querySelector('.flex.flex-wrap.justify-center.gap-4.mb-12');
+        const categoryContainer = document.getElementById('blog-categories');
         if (!categoryContainer) return;
         
         // Clear existing buttons except "All Posts"
         const allButton = categoryContainer.querySelector('[data-category="all"]');
         categoryContainer.innerHTML = '';
-        categoryContainer.appendChild(allButton);
+        if (allButton) {
+            categoryContainer.appendChild(allButton);
+        }
         
         // Add dynamic category buttons
         Object.entries(this.categories).forEach(([key, category]) => {
