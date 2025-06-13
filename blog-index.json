@@ -21,11 +21,6 @@
       "id": "the-northern-land",
       "category": "adventure",
       "file": "static-blog/adventure/the-northern-land.txt"
-    },
-    {
-      "id": "digital-minimalism",
-      "category": "technical",
-      "file": "static-blog/technical/digital-minimalism.txt"
     }
   ]
 }
