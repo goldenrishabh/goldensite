@@ -31,11 +31,6 @@
       "id": "the-northern-land",
       "category": "adventure",
       "file": "static-blog/adventure/the-northern-land.txt"
-    },
-    {
-      "id": "testing",
-      "category": "random",
-      "file": "static-blog/random/testing.txt"
     }
   ]
 }
