@@ -1,0 +1,10 @@
+---
+title: "Testing2"
+excerpt: "Testing"
+category: "custom"
+date: "2025-06-14"
+readTime: "6 min read"
+tags: ["Testing"]
+---
+
+#Testing2
