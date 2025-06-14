@@ -15,11 +15,6 @@
       "description": "Programming, tutorials, technical insights",
       "color": "blue"
     },
-    "random": {
-      "name": "Random Thoughts",
-      "description": "Random musings, quick thoughts, and brain dumps",
-      "color": "green"
-    },
     "personal": {
       "name": "Personal",
       "description": "Personal experiences, life updates, and reflections",
