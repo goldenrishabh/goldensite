@@ -25,11 +25,6 @@
       "description": "Personal experiences, life updates, and reflections",
       "color": "pink"
     },
-    "custom": {
-      "name": "Custom",
-      "description": "Custom category posts",
-      "color": "gray"
-    },
     "testing": {
       "name": "Testing",
       "description": "Testing posts and experiments",
@@ -41,11 +36,6 @@
       "id": "the-northern-land",
       "category": "adventure",
       "file": "static-blog/adventure/the-northern-land.txt"
-    },
-    {
-      "id": "testing2",
-      "category": "testing",
-      "file": "static-blog/testing/testing2.txt"
     }
   ]
 }
