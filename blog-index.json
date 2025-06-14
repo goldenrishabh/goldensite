@@ -24,11 +24,6 @@
       "name": "Personal",
       "description": "Personal experiences, life updates, and reflections",
       "color": "pink"
-    },
-    "testing": {
-      "name": "Testing",
-      "description": "Testing posts and experiments",
-      "color": "blue"
     }
   },
   "posts": [
