@@ -1,7 +1,7 @@
 ---
 title: "Testing"
 excerpt: "Test"
-category: "custom"
+category: "testing"
 date: "2025-06-14"
 readTime: "100 min read"
 tags: ["Test"]

@@ -487,6 +487,16 @@ class AdminPanel {
             } else {
                 customCategoryContainer.style.display = 'block';
             }
+            
+            // Clear any existing values in the custom inputs
+            setTimeout(() => {
+                const keyInput = document.getElementById('custom-category-key');
+                const nameInput = document.getElementById('custom-category-name');
+                const descriptionInput = document.getElementById('custom-category-description');
+                if (keyInput) keyInput.value = '';
+                if (nameInput) nameInput.value = '';
+                if (descriptionInput) descriptionInput.value = '';
+            }, 100);
         } else {
             // Hide custom category input
             if (customCategoryContainer) {
@@ -552,11 +562,18 @@ class AdminPanel {
             color
         };
         
+        // Create directory immediately via GitHub API
+        await this.createCategoryDirectory(key, name, description);
+        
         // Update the dropdown
         this.populateCategoryDropdown();
         
-        // Select the new category
-        document.getElementById('post-category').value = key;
+        // Wait for dropdown to update, then select the new category
+        setTimeout(() => {
+            document.getElementById('post-category').value = key;
+            // Trigger change event to ensure any listeners are updated
+            document.getElementById('post-category').dispatchEvent(new Event('change'));
+        }, 100);
         
         // Hide custom input
         document.getElementById('custom-category-container').style.display = 'none';
@@ -568,8 +585,30 @@ class AdminPanel {
             window.personalWebsite.updateNavDropdown();
         }
         
-        // Create directory if it doesn't exist (this will be done when syncing with GitHub)
-        alert(`Category "${name}" added! Don't forget to sync with GitHub to create the directory structure.`);
+        alert(`Category "${name}" added and directory created successfully!`);
+    }
+
+    async createCategoryDirectory(categoryKey, categoryName, categoryDescription) {
+        if (!this.githubToken) {
+            console.log('No GitHub token - directory will be created on next sync');
+            return;
+        }
+
+        try {
+            const categoryPath = `static-blog/${categoryKey}`;
+            const readmeContent = `# ${categoryName}\n\n${categoryDescription}\n\nThis directory contains ${categoryName} blog posts.`;
+            
+            await this.createOrUpdateFileInGitHub(
+                `${categoryPath}/README.md`,
+                readmeContent,
+                `Create ${categoryName} category directory`
+            );
+            
+            console.log(`✅ Created directory for category: ${categoryKey}`);
+        } catch (error) {
+            console.warn(`Failed to create directory for category ${categoryKey}:`, error);
+            // Don't throw error - category still gets added locally
+        }
     }
 
     openPostEditor(postId = null) {

@@ -29,6 +29,11 @@
       "name": "Custom",
       "description": "Custom category posts",
       "color": "gray"
+    },
+    "testing": {
+      "name": "Testing",
+      "description": "Testing posts and experiments",
+      "color": "blue"
     }
   },
   "posts": [
@@ -39,8 +44,8 @@
     },
     {
       "id": "testing",
-      "category": "custom",
-      "file": "static-blog/custom/testing.txt"
+      "category": "testing",
+      "file": "static-blog/testing/testing.txt"
     }
   ]
 }

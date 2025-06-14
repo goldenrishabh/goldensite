@@ -253,18 +253,16 @@ class PersonalWebsite {
                 </div>
             `;
             
-            // Add category items
+            // Add category items - show all categories, even those without posts
             Object.entries(this.categories).forEach(([key, category]) => {
                 const count = categoryCounts[key] || 0;
-                if (count > 0) {
-                    dropdownHTML += `
-                        <div class="blog-dropdown-item" data-category="${key}">
-                            <div class="category-icon ${key}"></div>
-                            <span>${category.name}</span>
-                            <span class="category-count">${count}</span>
-                        </div>
-                    `;
-                }
+                dropdownHTML += `
+                    <div class="blog-dropdown-item" data-category="${key}">
+                        <div class="category-icon ${key}"></div>
+                        <span>${category.name}</span>
+                        <span class="category-count">${count}</span>
+                    </div>
+                `;
             });
             
             dropdown.innerHTML = dropdownHTML;
@@ -294,17 +292,15 @@ class PersonalWebsite {
             
             Object.entries(this.categories).forEach(([key, category]) => {
                 const count = categoryCounts[key] || 0;
-                if (count > 0) {
-                    mobileHTML += `
-                        <a href="#blog" class="block px-3 py-2 text-gray-600 dark:text-cream-400 hover:text-cream-600 dark:hover:text-cream-400 transition-colors" data-category="${key}">
-                            <div class="flex items-center">
-                                <div class="category-icon ${key} mr-2"></div>
-                                <span>${category.name}</span>
-                                <span class="ml-auto text-xs bg-cream-200 dark:bg-gray-700 text-cream-700 dark:text-cream-300 px-2 py-1 rounded-full">${count}</span>
-                            </div>
-                        </a>
-                    `;
-                }
+                mobileHTML += `
+                    <a href="#blog" class="block px-3 py-2 text-gray-600 dark:text-cream-400 hover:text-cream-600 dark:hover:text-cream-400 transition-colors" data-category="${key}">
+                        <div class="flex items-center">
+                            <div class="category-icon ${key} mr-2"></div>
+                            <span>${category.name}</span>
+                            <span class="ml-auto text-xs bg-cream-200 dark:bg-gray-700 text-cream-700 dark:text-cream-300 px-2 py-1 rounded-full">${count}</span>
+                        </div>
+                    </a>
+                `;
             });
             
             mobileDropdown.innerHTML = mobileHTML;
