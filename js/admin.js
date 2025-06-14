@@ -435,6 +435,9 @@ class AdminPanel {
                 }
             }
 
+            // Update blog-index.json immediately
+            await this.updateBlogIndexFile();
+
             // Update UI
             this.populateCategoryDropdown();
             this.renderCategoriesList();
@@ -657,6 +660,9 @@ class AdminPanel {
         // Create directory immediately via GitHub API
         await this.createCategoryDirectory(key, name, description);
         
+        // Update blog-index.json immediately
+        await this.updateBlogIndexFile();
+        
         // Update the dropdown
         this.populateCategoryDropdown();
         
@@ -703,6 +709,41 @@ class AdminPanel {
         } catch (error) {
             console.warn(`Failed to create directory for category ${categoryKey}:`, error);
             // Don't throw error - category still gets added locally
+        }
+    }
+
+    async updateBlogIndexFile() {
+        if (!this.githubToken) {
+            console.log('No GitHub token - blog-index.json will be updated on next sync');
+            return;
+        }
+
+        try {
+            // Generate updated blog-index.json
+            const blogIndex = {
+                categories: this.categories,
+                posts: this.posts.map(post => ({
+                    id: post.id,
+                    category: post.category,
+                    file: post.file
+                }))
+            };
+
+            // Get existing file to preserve SHA
+            const existingFile = await this.getFileFromGitHub('blog-index.json');
+            
+            // Update blog-index.json on GitHub
+            await this.createOrUpdateFileInGitHub(
+                'blog-index.json',
+                JSON.stringify(blogIndex, null, 2),
+                'Update blog index after category changes',
+                existingFile?.sha
+            );
+            
+            console.log('✅ Updated blog-index.json');
+        } catch (error) {
+            console.warn('Failed to update blog-index.json:', error);
+            // Don't throw error - changes are still preserved locally
         }
     }
 
@@ -812,11 +853,14 @@ class AdminPanel {
             // Save to browser storage (temporary solution)
             localStorage.setItem(`post-${id}`, markdownContent);
             
+            // Update blog-index.json immediately
+            await this.updateBlogIndexFile();
+            
             this.renderPostsList();
             this.renderCategoriesList(); // Update categories list to show new post counts
             this.closePostEditor();
             
-            alert('Post saved! Click "Sync with GitHub" to publish changes.');
+            alert('Post saved and blog index updated!');
         } catch (error) {
             console.error('Failed to save post:', error);
             alert('Failed to save post. Please try again.');
