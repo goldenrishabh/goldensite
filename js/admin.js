@@ -219,6 +219,7 @@ class AdminPanel {
 
         await this.loadBlogData();
         this.populateCategoryDropdown();
+        this.renderCategoriesList();
         
         // Refresh category buttons and dropdowns on main site if needed
         if (window.personalWebsite && window.personalWebsite.updateCategoryButtons) {
@@ -372,6 +373,86 @@ class AdminPanel {
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
+    renderCategoriesList() {
+        const container = document.getElementById('categories-list');
+        if (!container) return;
+
+        // Calculate post counts for each category
+        const categoryCounts = {};
+        this.posts.forEach(post => {
+            categoryCounts[post.category] = (categoryCounts[post.category] || 0) + 1;
+        });
+
+        container.innerHTML = Object.entries(this.categories).map(([key, category]) => {
+            const postCount = categoryCounts[key] || 0;
+            const canDelete = postCount === 0; // Only allow deletion if no posts use this category
+            
+            return `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-${category.color}-500 mr-3"></div>
+                            <div class="text-sm font-medium text-gray-900 dark:text-gray-100">${category.name}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${key}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${postCount}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        ${canDelete ? 
+                            `<button onclick="adminPanel.deleteCategoryConfirm('${key}')" class="text-red-600 hover:text-red-900">Delete</button>` :
+                            `<span class="text-gray-400">Has posts</span>`
+                        }
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    deleteCategoryConfirm(categoryKey) {
+        const category = this.categories[categoryKey];
+        if (!category) return;
+        
+        if (confirm(`Are you sure you want to delete the "${category.name}" category? This action cannot be undone.`)) {
+            this.deleteCategory(categoryKey);
+        }
+    }
+
+    async deleteCategory(categoryKey) {
+        const category = this.categories[categoryKey];
+        if (!category) return;
+
+        try {
+            // Remove from categories object
+            delete this.categories[categoryKey];
+
+            // Delete directory from GitHub if possible
+            if (this.githubToken) {
+                try {
+                    await this.deleteFileFromGitHub(`static-blog/${categoryKey}/README.md`, `Delete ${category.name} category directory`);
+                    console.log(`✅ Deleted directory for category: ${categoryKey}`);
+                } catch (error) {
+                    console.warn(`Failed to delete directory for category ${categoryKey}:`, error);
+                }
+            }
+
+            // Update UI
+            this.populateCategoryDropdown();
+            this.renderCategoriesList();
+
+            // Update main site if needed
+            if (window.personalWebsite && window.personalWebsite.updateCategoryButtons) {
+                window.personalWebsite.categories = this.categories;
+                window.personalWebsite.updateCategoryButtons();
+                window.personalWebsite.updateNavDropdown();
+            }
+
+            alert(`Category "${category.name}" deleted successfully!`);
+        } catch (error) {
+            console.error('Failed to delete category:', error);
+            alert('Failed to delete category. Please try again.');
+        }
+    }
+
     parseMarkdownWithFrontmatter(markdown) {
         const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
         const match = markdown.match(frontmatterRegex);
@@ -456,6 +537,9 @@ class AdminPanel {
         const categorySelect = document.getElementById('post-category');
         if (!categorySelect) return;
 
+        // Store current value to preserve selection
+        const currentValue = categorySelect.value;
+
         // Clear existing options
         categorySelect.innerHTML = '';
 
@@ -474,6 +558,14 @@ class AdminPanel {
         customOption.value = 'custom';
         customOption.textContent = '+ Add New Category';
         categorySelect.appendChild(customOption);
+
+        // Restore previous selection if it still exists
+        if (currentValue && Array.from(categorySelect.options).some(opt => opt.value === currentValue)) {
+            categorySelect.value = currentValue;
+        } else if (categorySelect.options.length > 1) {
+            // Default to first real category
+            categorySelect.value = categorySelect.options[0].value;
+        }
     }
 
     async handleCategoryChange() {
@@ -584,6 +676,9 @@ class AdminPanel {
             window.personalWebsite.updateCategoryButtons();
             window.personalWebsite.updateNavDropdown();
         }
+
+        // Refresh the categories list
+        this.renderCategoriesList();
         
         alert(`Category "${name}" added and directory created successfully!`);
     }
@@ -641,7 +736,14 @@ class AdminPanel {
             
             // Clear form
             document.getElementById('post-title').value = '';
-            document.getElementById('post-category').value = 'technical';
+            
+            // Set default category to first available category
+            const categorySelect = document.getElementById('post-category');
+            if (categorySelect.options.length > 1) {
+                // Set to first real category (skip "Add New Category" option)
+                categorySelect.value = categorySelect.options[0].value;
+            }
+            
             document.getElementById('post-excerpt').value = '';
             document.getElementById('post-date').value = new Date().toISOString().split('T')[0]; // Default to today
             document.getElementById('post-tags').value = '';
@@ -711,6 +813,7 @@ class AdminPanel {
             localStorage.setItem(`post-${id}`, markdownContent);
             
             this.renderPostsList();
+            this.renderCategoriesList(); // Update categories list to show new post counts
             this.closePostEditor();
             
             alert('Post saved! Click "Sync with GitHub" to publish changes.');

@@ -218,13 +218,21 @@ class PersonalWebsite {
             categoryContainer.appendChild(allButton);
         }
         
-        // Add dynamic category buttons
+        // Add dynamic category buttons - only show categories with posts
+        const categoryCounts = {};
+        this.blogPosts.forEach(post => {
+            categoryCounts[post.category] = (categoryCounts[post.category] || 0) + 1;
+        });
+
         Object.entries(this.categories).forEach(([key, category]) => {
-            const button = document.createElement('button');
-            button.className = 'blog-category-btn';
-            button.setAttribute('data-category', key);
-            button.textContent = category.name;
-            categoryContainer.appendChild(button);
+            const count = categoryCounts[key] || 0;
+            if (count > 0) {
+                const button = document.createElement('button');
+                button.className = 'blog-category-btn';
+                button.setAttribute('data-category', key);
+                button.textContent = category.name;
+                categoryContainer.appendChild(button);
+            }
         });
         
         // Re-attach event listeners
@@ -253,16 +261,18 @@ class PersonalWebsite {
                 </div>
             `;
             
-            // Add category items - show all categories, even those without posts
+            // Add category items - only show categories with posts
             Object.entries(this.categories).forEach(([key, category]) => {
                 const count = categoryCounts[key] || 0;
-                dropdownHTML += `
-                    <div class="blog-dropdown-item" data-category="${key}">
-                        <div class="category-icon ${key}"></div>
-                        <span>${category.name}</span>
-                        <span class="category-count">${count}</span>
-                    </div>
-                `;
+                if (count > 0) {
+                    dropdownHTML += `
+                        <div class="blog-dropdown-item" data-category="${key}">
+                            <div class="category-icon ${key}"></div>
+                            <span>${category.name}</span>
+                            <span class="category-count">${count}</span>
+                        </div>
+                    `;
+                }
             });
             
             dropdown.innerHTML = dropdownHTML;
@@ -292,15 +302,17 @@ class PersonalWebsite {
             
             Object.entries(this.categories).forEach(([key, category]) => {
                 const count = categoryCounts[key] || 0;
-                mobileHTML += `
-                    <a href="#blog" class="block px-3 py-2 text-gray-600 dark:text-cream-400 hover:text-cream-600 dark:hover:text-cream-400 transition-colors" data-category="${key}">
-                        <div class="flex items-center">
-                            <div class="category-icon ${key} mr-2"></div>
-                            <span>${category.name}</span>
-                            <span class="ml-auto text-xs bg-cream-200 dark:bg-gray-700 text-cream-700 dark:text-cream-300 px-2 py-1 rounded-full">${count}</span>
-                        </div>
-                    </a>
-                `;
+                if (count > 0) {
+                    mobileHTML += `
+                        <a href="#blog" class="block px-3 py-2 text-gray-600 dark:text-cream-400 hover:text-cream-600 dark:hover:text-cream-400 transition-colors" data-category="${key}">
+                            <div class="flex items-center">
+                                <div class="category-icon ${key} mr-2"></div>
+                                <span>${category.name}</span>
+                                <span class="ml-auto text-xs bg-cream-200 dark:bg-gray-700 text-cream-700 dark:text-cream-300 px-2 py-1 rounded-full">${count}</span>
+                            </div>
+                        </a>
+                    `;
+                }
             });
             
             mobileDropdown.innerHTML = mobileHTML;

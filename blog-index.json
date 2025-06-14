@@ -44,8 +44,8 @@
     },
     {
       "id": "testing2",
-      "category": "custom",
-      "file": "static-blog/custom/testing2.txt"
+      "category": "testing",
+      "file": "static-blog/testing/testing2.txt"
     }
   ]
 }
