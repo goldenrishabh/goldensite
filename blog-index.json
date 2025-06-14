@@ -43,9 +43,9 @@
       "file": "static-blog/adventure/the-northern-land.txt"
     },
     {
-      "id": "testing",
-      "category": "testing",
-      "file": "static-blog/testing/testing.txt"
+      "id": "testing2",
+      "category": "custom",
+      "file": "static-blog/custom/testing2.txt"
     }
   ]
 }
