@@ -4,6 +4,11 @@
       "name": "Adventure",
       "description": "Travel stories, outdoor adventures, and explorations",
       "color": "orange"
+    },
+    "testing": {
+      "name": "Testing",
+      "description": "Testing posts",
+      "color": "blue"
     }
   },
   "posts": [
