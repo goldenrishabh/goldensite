@@ -643,7 +643,7 @@ class AdminPanel {
         
         if (!key || !name) {
             alert('Please provide both category key and name.');
-            return;
+            return null;
         }
         
         // Add to categories object
@@ -687,6 +687,8 @@ class AdminPanel {
         this.renderCategoriesList();
         
         alert(`Category "${name}" added and directory created successfully!`);
+        
+        return key;
     }
 
     async createCategoryDirectory(categoryKey, categoryName, categoryDescription) {
@@ -807,7 +809,7 @@ class AdminPanel {
 
     async savePost() {
         const title = document.getElementById('post-title').value;
-        const category = document.getElementById('post-category').value;
+        let category = document.getElementById('post-category').value;
         const excerpt = document.getElementById('post-excerpt').value;
         const date = document.getElementById('post-date').value;
         const tags = document.getElementById('post-tags').value;
@@ -817,6 +819,33 @@ class AdminPanel {
         if (!title || !content) {
             alert('Please fill in at least the title and content.');
             return;
+        }
+
+        // Handle custom category creation BEFORE saving the post
+        if (category === 'custom') {
+            const customKey = document.getElementById('custom-category-key')?.value?.trim();
+            const customName = document.getElementById('custom-category-name')?.value?.trim();
+            
+            if (!customKey || !customName) {
+                alert('Please fill in the custom category details first.');
+                return;
+            }
+            
+            // Create the new category and get the key
+            const newCategoryKey = await this.addNewCategory();
+            
+            if (!newCategoryKey) {
+                alert('Failed to create new category.');
+                return;
+            }
+            
+            // Update category to use the new key instead of "custom"
+            category = newCategoryKey;
+            
+            // Update the dropdown to reflect the new selection
+            setTimeout(() => {
+                document.getElementById('post-category').value = category;
+            }, 100);
         }
 
         const id = this.currentEditingPost || this.generatePostId(title);

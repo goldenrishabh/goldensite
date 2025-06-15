@@ -19,6 +19,11 @@
       "name": "Personal",
       "description": "Personal experiences, life updates, and reflections",
       "color": "pink"
+    },
+    "testing": {
+      "name": "Testing",
+      "description": "Test posts and experimental content",
+      "color": "green"
     }
   },
   "posts": [
@@ -29,8 +34,8 @@
     },
     {
       "id": "testing",
-      "category": "custom",
-      "file": "static-blog/custom/testing.txt"
+      "category": "testing",
+      "file": "static-blog/testing/testing.txt"
     }
   ]
 }
