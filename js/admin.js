@@ -321,21 +321,23 @@ class AdminPanel {
             this.posts = [];
 
             // Load each post
-            for (const postInfo of data.posts) {
-                try {
-                    const postResponse = await fetch(postInfo.file);
-                    const content = await postResponse.text();
-                    const parsed = this.parseMarkdownWithFrontmatter(content);
-                    
-                    this.posts.push({
-                        id: postInfo.id,
-                        category: postInfo.category,
-                        file: postInfo.file,
-                        ...parsed.frontmatter,
-                        content: parsed.content
-                    });
-                } catch (error) {
-                    console.error(`Failed to load post ${postInfo.file}:`, error);
+            if (data.posts && data.posts.length > 0) {
+                for (const postInfo of data.posts) {
+                    try {
+                        const postResponse = await fetch(postInfo.file);
+                        const content = await postResponse.text();
+                        const parsed = this.parseMarkdownWithFrontmatter(content);
+                        
+                        this.posts.push({
+                            id: postInfo.id,
+                            category: postInfo.category,
+                            file: postInfo.file,
+                            ...parsed.frontmatter,
+                            content: parsed.content
+                        });
+                    } catch (error) {
+                        console.error(`Failed to load post ${postInfo.file}:`, error);
+                    }
                 }
             }
 
@@ -345,6 +347,10 @@ class AdminPanel {
             this.renderPostsList();
         } catch (error) {
             console.error('Failed to load blog data:', error);
+            // Initialize with empty data if blog-index.json doesn't exist
+            this.categories = {};
+            this.posts = [];
+            this.renderPostsList();
         }
     }
 
@@ -582,7 +588,7 @@ class AdminPanel {
         categorySelect.innerHTML = '';
 
         // Add default categories from blog-index.json
-        if (this.categories) {
+        if (this.categories && Object.keys(this.categories).length > 0) {
             Object.entries(this.categories).forEach(([key, categoryInfo]) => {
                 const option = document.createElement('option');
                 option.value = key;
@@ -591,18 +597,24 @@ class AdminPanel {
             });
         }
 
-        // Add option for custom category
+        // Always add option for custom category
         const customOption = document.createElement('option');
         customOption.value = 'custom';
         customOption.textContent = '+ Add New Category';
         categorySelect.appendChild(customOption);
 
-        // Restore previous selection if it still exists
+        // Handle selection logic
         if (currentValue && Array.from(categorySelect.options).some(opt => opt.value === currentValue)) {
+            // Restore previous selection if it still exists
             categorySelect.value = currentValue;
-        } else if (categorySelect.options.length > 1) {
-            // Default to first real category
-            categorySelect.value = categorySelect.options[0].value;
+        } else if (this.categories && Object.keys(this.categories).length > 0) {
+            // Default to first real category if categories exist
+            categorySelect.value = Object.keys(this.categories)[0];
+        } else {
+            // If no categories exist, default to the "Add New Category" option
+            categorySelect.value = 'custom';
+            // Trigger the change event to show the category input
+            setTimeout(() => this.handleCategoryChange(), 100);
         }
     }
 
@@ -620,12 +632,11 @@ class AdminPanel {
             
             // Clear any existing values in the custom inputs
             setTimeout(() => {
-                const keyInput = document.getElementById('custom-category-key');
                 const nameInput = document.getElementById('custom-category-name');
-                const descriptionInput = document.getElementById('custom-category-description');
-                if (keyInput) keyInput.value = '';
-                if (nameInput) nameInput.value = '';
-                if (descriptionInput) descriptionInput.value = '';
+                if (nameInput) {
+                    nameInput.value = '';
+                    nameInput.focus(); // Auto-focus for better UX
+                }
             }, 100);
         } else {
             // Hide custom category input
@@ -643,43 +654,51 @@ class AdminPanel {
         customContainer.className = 'mt-2 space-y-2';
         
         customContainer.innerHTML = `
-            <input type="text" id="custom-category-key" class="admin-input" placeholder="Category key (e.g., 'random-thoughts')">
-            <input type="text" id="custom-category-name" class="admin-input" placeholder="Display name (e.g., 'Random Thoughts')">
-            <input type="text" id="custom-category-description" class="admin-input" placeholder="Description (optional)">
-            <select id="custom-category-color" class="admin-select">
-                <option value="blue">Blue</option>
-                <option value="purple">Purple</option>
-                <option value="orange">Orange</option>
-                <option value="green">Green</option>
-                <option value="pink">Pink</option>
-                <option value="red">Red</option>
-                <option value="yellow">Yellow</option>
-                <option value="gray">Gray</option>
-            </select>
-            <button type="button" id="add-category-btn" class="admin-btn admin-btn-secondary">Add Category</button>
+            <div class="flex space-x-2">
+                <input type="text" id="custom-category-name" class="admin-input flex-1" placeholder="Category name (e.g., 'Random Thoughts')" autofocus>
+                <button type="button" id="add-category-btn" class="admin-btn admin-btn-secondary">Add</button>
+            </div>
+            <p class="text-xs text-gray-500">A category key will be auto-generated from the name</p>
         `;
         
         categoryContainer.appendChild(customContainer);
         
         // Add event listener for the add category button
         document.getElementById('add-category-btn').addEventListener('click', () => this.addNewCategory());
+        
+        // Add enter key support
+        document.getElementById('custom-category-name').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.addNewCategory();
+            }
+        });
     }
 
     async addNewCategory() {
-        const keyInput = document.getElementById('custom-category-key');
         const nameInput = document.getElementById('custom-category-name');
-        const descriptionInput = document.getElementById('custom-category-description');
-        const colorSelect = document.getElementById('custom-category-color');
         
-        const key = keyInput.value.trim().toLowerCase().replace(/\s+/g, '-');
         const name = nameInput.value.trim();
-        const description = descriptionInput.value.trim() || `${name} posts`;
-        const color = colorSelect.value;
         
-        if (!key || !name) {
-            alert('Please provide both category key and name.');
+        if (!name) {
+            alert('Please provide a category name.');
             return null;
         }
+        
+        // Auto-generate key from name
+        const key = name.toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+            .replace(/\s+/g, '-') // Replace spaces with hyphens
+            .replace(/-+/g, '-') // Replace multiple hyphens with single
+            .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+        
+        // Check if category already exists
+        if (this.categories && this.categories[key]) {
+            alert(`Category "${name}" already exists!`);
+            return null;
+        }
+        
+        const description = `${name} posts`;
+        const color = this.getRandomColor();
         
         // Add to categories object
         if (!this.categories) {
@@ -858,11 +877,10 @@ class AdminPanel {
 
         // Handle custom category creation BEFORE saving the post
         if (category === 'custom') {
-            const customKey = document.getElementById('custom-category-key')?.value?.trim();
             const customName = document.getElementById('custom-category-name')?.value?.trim();
             
-            if (!customKey || !customName) {
-                alert('Please fill in the custom category details first.');
+            if (!customName) {
+                alert('Please enter a category name first.');
                 return;
             }
             
@@ -989,15 +1007,157 @@ class AdminPanel {
                     toolbar: [
                         'bold', 'italic', 'heading', '|',
                         'quote', 'unordered-list', 'ordered-list', '|',
-                        'link', 'image', '|',
+                        'link', 'image', {
+                            name: 'upload-image',
+                            action: () => this.openImageUpload(),
+                            className: 'fa fa-upload',
+                            title: 'Upload Image'
+                        }, '|',
                         'preview', 'side-by-side', 'fullscreen', '|',
                         'guide'
                     ]
                 });
+                
+                // Add custom image upload functionality
+                this.setupImageUpload();
             } catch (error) {
                 console.log('SimpleMDE not available, using textarea fallback');
+                this.setupBasicImageUpload();
             }
         }, 100);
+    }
+
+    setupImageUpload() {
+        // Create hidden file input for image upload
+        if (!document.getElementById('markdown-image-upload')) {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.id = 'markdown-image-upload';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            fileInput.addEventListener('change', (e) => this.handleMarkdownImageUpload(e));
+            document.body.appendChild(fileInput);
+        }
+    }
+
+    setupBasicImageUpload() {
+        // Fallback for when SimpleMDE is not available
+        const contentArea = document.getElementById('post-content');
+        if (contentArea) {
+            // Add a simple upload button above the textarea
+            const uploadBtn = document.createElement('button');
+            uploadBtn.textContent = '📷 Upload Image';
+            uploadBtn.type = 'button';
+            uploadBtn.className = 'admin-btn admin-btn-secondary mb-2';
+            uploadBtn.addEventListener('click', () => this.openImageUpload());
+            contentArea.parentElement.insertBefore(uploadBtn, contentArea);
+        }
+        this.setupImageUpload();
+    }
+
+    openImageUpload() {
+        const fileInput = document.getElementById('markdown-image-upload');
+        if (fileInput) {
+            fileInput.click();
+        }
+    }
+
+    async handleMarkdownImageUpload(event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        if (!this.githubToken) {
+            alert('Please set your GitHub token in Settings to upload images.');
+            return;
+        }
+
+        const file = files[0];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file.');
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Image size must be less than 5MB.');
+            return;
+        }
+
+        try {
+            // Show upload progress
+            const progressMsg = `🔄 Uploading ${file.name}...`;
+            
+            // Read file as base64
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const content = e.target.result.split(',')[1]; // Remove data:image/...;base64, prefix
+                    
+                    // Generate unique filename with timestamp
+                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                    const fileExtension = file.name.split('.').pop();
+                    const fileName = `${timestamp}.${fileExtension}`;
+                    const filePath = `static-blog/images/${fileName}`;
+                    
+                    // Upload to GitHub
+                    await this.createOrUpdateFileInGitHub(
+                        filePath,
+                        content,
+                        `Upload image: ${fileName}`
+                    );
+                    
+                    // Generate the GitHub raw URL for the image
+                    const imageUrl = `https://raw.githubusercontent.com/${this.githubRepo}/main/${filePath}`;
+                    
+                    // Insert markdown image syntax at cursor position
+                    const markdownSyntax = `![${file.name}](${imageUrl})`;
+                    this.insertTextAtCursor(markdownSyntax);
+                    
+                    // Clear the file input
+                    event.target.value = '';
+                    
+                    alert(`✅ Image uploaded successfully!\nFile: ${fileName}`);
+                    
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    alert(`❌ Failed to upload image: ${error.message}`);
+                }
+            };
+            
+            reader.onerror = () => {
+                alert('❌ Failed to read image file.');
+            };
+            
+            reader.readAsDataURL(file);
+            
+        } catch (error) {
+            console.error('Image upload error:', error);
+            alert(`❌ Failed to upload image: ${error.message}`);
+        }
+    }
+
+    insertTextAtCursor(text) {
+        if (this.markdownEditor) {
+            // SimpleMDE is available
+            const cursor = this.markdownEditor.codemirror.getCursor();
+            this.markdownEditor.codemirror.replaceRange(text, cursor);
+            this.markdownEditor.codemirror.focus();
+        } else {
+            // Fallback to textarea
+            const textarea = document.getElementById('post-content');
+            if (textarea) {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const textBefore = textarea.value.substring(0, start);
+                const textAfter = textarea.value.substring(end);
+                
+                textarea.value = textBefore + text + textAfter;
+                textarea.selectionStart = textarea.selectionEnd = start + text.length;
+                textarea.focus();
+            }
+        }
     }
 
     async syncWithGitHub() {
@@ -1431,6 +1591,23 @@ style.textContent = `
         color: #de9f39;
         border-bottom-color: #de9f39;
         font-weight: 500;
+    }
+    
+    /* Custom image upload button styling for SimpleMDE */
+    .editor-toolbar .fa-upload:before {
+        content: "📷";
+        font-family: inherit;
+    }
+    
+    /* Image upload progress styling */
+    .image-upload-progress {
+        background: #f0f9ff;
+        border: 1px solid #0ea5e9;
+        border-radius: 4px;
+        padding: 8px 12px;
+        margin: 8px 0;
+        color: #0369a1;
+        font-size: 14px;
     }
 `;
 document.head.appendChild(style); 
