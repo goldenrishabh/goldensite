@@ -5,11 +5,6 @@
       "description": "Travel stories, outdoor adventures, and explorations",
       "color": "orange"
     },
-    "technical": {
-      "name": "Technical",
-      "description": "Programming, tutorials, technical insights",
-      "color": "blue"
-    },
     "personal": {
       "name": "Personal",
       "description": "Personal experiences, life updates, and reflections",
