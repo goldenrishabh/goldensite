@@ -11,16 +11,5 @@
       "color": "blue"
     }
   },
-  "posts": [
-    {
-      "id": "the-northern-land",
-      "category": "adventure",
-      "file": "static-blog/adventure/the-northern-land.txt"
-    },
-    {
-      "id": "testing",
-      "category": "testing",
-      "file": "static-blog/testing/testing.txt"
-    }
-  ]
+  "posts": []
 }
