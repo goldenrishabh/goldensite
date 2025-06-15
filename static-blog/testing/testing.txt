@@ -1,10 +1,10 @@
 ---
 title: "Testing"
-excerpt: ""
-category: "custom"
-date: "2025-06-14"
-readTime: ""
-tags: ["test"]
+excerpt: "Testing"
+category: "testing"
+date: "2025-06-04"
+readTime: "2 min read"
+tags: ["Testing"]
 ---
 
-#test
+# Testing
