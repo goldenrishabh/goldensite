@@ -19,11 +19,6 @@
       "name": "Personal",
       "description": "Personal experiences, life updates, and reflections",
       "color": "pink"
-    },
-    "custom": {
-      "name": "Custom",
-      "description": "Custom posts",
-      "color": "blue"
     }
   },
   "posts": [
