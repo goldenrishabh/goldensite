@@ -74,6 +74,11 @@ class AdminPanel {
             this.testGitHubConnection();
         });
 
+        // Clear cache button
+        document.getElementById('clear-cache').addEventListener('click', () => {
+            this.clearCache();
+        });
+
         // File upload
         document.getElementById('file-upload').addEventListener('change', (e) => {
             this.handleFileUpload(e.target.files);
@@ -218,6 +223,7 @@ class AdminPanel {
         }
 
         await this.loadBlogData();
+        this.cleanupInvalidLocalStorageData(); // Clean up any invalid cached data
         this.populateCategoryDropdown();
         this.renderCategoriesList();
         
@@ -360,6 +366,35 @@ class AdminPanel {
                     description: `${this.capitalizeWords(categoryKey.replace(/-/g, ' '))} posts`,
                     color: this.getRandomColor()
                 };
+            }
+        });
+    }
+
+    cleanupInvalidLocalStorageData() {
+        // Get all localStorage keys that start with 'post-'
+        const postKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('post-')) {
+                postKeys.push(key);
+            }
+        }
+
+        // Check each cached post for invalid data
+        postKeys.forEach(key => {
+            try {
+                const postContent = localStorage.getItem(key);
+                if (postContent) {
+                    // Check if this post uses "custom" category
+                    if (postContent.includes('category: "custom"')) {
+                        console.log(`🧹 Clearing invalid cached post: ${key} (uses "custom" category)`);
+                        localStorage.removeItem(key);
+                    }
+                }
+            } catch (error) {
+                // If we can't parse the cached data, remove it
+                console.log(`🧹 Clearing corrupted cached post: ${key}`);
+                localStorage.removeItem(key);
             }
         });
     }
@@ -1349,6 +1384,28 @@ class AdminPanel {
         // Reset button state
         testBtn.textContent = originalText;
         testBtn.disabled = false;
+    }
+
+    clearCache() {
+        if (confirm('This will clear all cached post data. Any unsaved changes will be lost. Continue?')) {
+            // Clear all post-related localStorage items
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('post-')) {
+                    keysToRemove.push(key);
+                }
+            }
+            
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                console.log(`🧹 Cleared cached post: ${key}`);
+            });
+            
+            // Reload the page to refresh everything
+            alert(`✅ Cache cleared! Removed ${keysToRemove.length} cached items. The page will now reload.`);
+            window.location.reload();
+        }
     }
 }
 

@@ -264,7 +264,7 @@
                 </div>
 
                 <!-- Category Management -->
-                <div class="admin-card">
+                <div class="admin-card mb-6">
                     <h3 class="text-lg font-semibold mb-4">Category Management</h3>
                     <div class="space-y-4">
                         <div class="overflow-x-auto">
@@ -281,6 +281,19 @@
                                     <!-- Categories will be loaded here -->
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Debug & Maintenance -->
+                <div class="admin-card">
+                    <h3 class="text-lg font-semibold mb-4">Debug & Maintenance</h3>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                            <p class="text-sm text-yellow-800 dark:text-yellow-200 mb-2">
+                                <strong>Cache Issues?</strong> If categories are showing as "custom" after relogin, clear the cache below.
+                            </p>
+                            <button id="clear-cache" class="admin-btn admin-btn-secondary">🧹 Clear Cache</button>
                         </div>
                     </div>
                 </div>
