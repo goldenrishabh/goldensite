@@ -1,10 +1,4 @@
 {
-  "categories": {
-    "testing": {
-      "name": "Testing",
-      "description": "Testing posts",
-      "color": "blue"
-    }
-  },
+  "categories": {},
   "posts": []
 }
