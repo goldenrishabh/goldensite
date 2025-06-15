@@ -5,11 +5,6 @@
       "description": "Travel stories, outdoor adventures, and explorations",
       "color": "orange"
     },
-    "philosophical": {
-      "name": "Philosophical",
-      "description": "Deep thoughts, ethics, life reflections",
-      "color": "purple"
-    },
     "technical": {
       "name": "Technical",
       "description": "Programming, tutorials, technical insights",
