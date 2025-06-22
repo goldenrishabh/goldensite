@@ -1057,25 +1057,29 @@ class AdminPanel {
         this.openPostEditor(postId);
     }
 
-    deletePostConfirm(postId) {
+    async deletePostConfirm(postId) {
         if (confirm('Are you sure you want to delete this post?')) {
-            this.deletePost(postId);
+            await this.deletePost(postId);
         }
     }
 
-    deletePost(postId = null) {
+    async deletePost(postId = null) {
         const id = postId || this.currentEditingPost;
         if (!id) return;
 
         this.posts = this.posts.filter(p => p.id !== id);
         localStorage.removeItem(`post-${id}`);
         
+        // Update blog-index.json immediately to preserve latestUpdates
+        await this.updateBlogIndexFile();
+        
         this.renderPostsList();
+        this.renderCategoriesList(); // Update categories list to show new post counts
         if (!postId) {
             this.closePostEditor();
         }
         
-        alert('Post deleted! Click "Sync with GitHub" to publish changes.');
+        alert('Post deleted and blog index updated!');
     }
 
     initializeMarkdownEditor() {
@@ -1278,7 +1282,8 @@ class AdminPanel {
                     id: post.id,
                     category: post.category,
                     file: post.file
-                }))
+                })),
+                latestUpdates: this.latestUpdates
             };
 
             // Update blog-index.json on GitHub
