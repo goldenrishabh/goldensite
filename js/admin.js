@@ -322,21 +322,21 @@ class AdminPanel {
 
             // Load each post
             if (data.posts && data.posts.length > 0) {
-                for (const postInfo of data.posts) {
-                    try {
-                        const postResponse = await fetch(postInfo.file);
-                        const content = await postResponse.text();
-                        const parsed = this.parseMarkdownWithFrontmatter(content);
-                        
-                        this.posts.push({
-                            id: postInfo.id,
-                            category: postInfo.category,
-                            file: postInfo.file,
-                            ...parsed.frontmatter,
-                            content: parsed.content
-                        });
-                    } catch (error) {
-                        console.error(`Failed to load post ${postInfo.file}:`, error);
+            for (const postInfo of data.posts) {
+                try {
+                    const postResponse = await fetch(postInfo.file);
+                    const content = await postResponse.text();
+                    const parsed = this.parseMarkdownWithFrontmatter(content);
+                    
+                    this.posts.push({
+                        id: postInfo.id,
+                        category: postInfo.category,
+                        file: postInfo.file,
+                        ...parsed.frontmatter,
+                        content: parsed.content
+                    });
+                } catch (error) {
+                    console.error(`Failed to load post ${postInfo.file}:`, error);
                     }
                 }
             }

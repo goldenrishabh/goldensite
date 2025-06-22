@@ -5,6 +5,7 @@ class PersonalWebsite {
         this.currentCategory = 'all';
         this.blogPosts = [];
         this.categories = {};
+        this.latestUpdates = null;
         this.isDarkMode = false;
         
         this.init();
@@ -13,8 +14,9 @@ class PersonalWebsite {
     init() {
         this.setupTheme();
         this.setupNavigation();
-        this.setupBlog();
+        this.setupDynamicContent();
         this.setupAnimations();
+        this.setupLatestModal();
         this.setupEventListeners();
     }
     
@@ -90,45 +92,59 @@ class PersonalWebsite {
         sections.forEach(section => observer.observe(section));
     }
     
-    // Blog System - Dynamic Loading
-    setupBlog() {
-        this.loadBlogPosts();
+    // Content System - Dynamic Loading
+    setupDynamicContent() {
+        this.loadDynamicContent();
     }
     
-    async loadBlogPosts() {
+    async loadDynamicContent() {
         try {
             // Load the blog index
             const response = await fetch('blog-index.json');
             if (!response.ok) {
-                console.warn('Blog index not found, falling back to auto-discovery');
-                await this.autoDiscoverPosts();
+                console.warn('Blog index not found, handling gracefully.');
+                this.handleContentLoadError();
                 return;
             }
             
             const blogIndex = await response.json();
             this.categories = blogIndex.categories || {};
+            this.latestUpdates = blogIndex.latestUpdates || { read: [], watched: [], building: [] };
             
             // Load each blog post
-            const postsPromises = blogIndex.posts.map(postInfo => this.loadSinglePost(postInfo));
-            const loadedPosts = await Promise.all(postsPromises);
+            if (blogIndex.posts && blogIndex.posts.length > 0) {
+                const postsPromises = blogIndex.posts.map(postInfo => this.loadSinglePost(postInfo));
+                const loadedPosts = await Promise.all(postsPromises);
+                
+                // Filter out failed loads
+                this.blogPosts = loadedPosts.filter(post => post !== null);
+                
+                // Sort by date (newest first)
+                this.blogPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+            } else {
+                this.blogPosts = [];
+            }
             
-            // Filter out failed loads
-            this.blogPosts = loadedPosts.filter(post => post !== null);
-            
-            // Sort by date (newest first)
-            this.blogPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            // Update categories in UI
+            // Update UI
             this.updateCategoryButtons();
             this.updateNavDropdown();
-            
             this.renderBlogPosts();
+            this.displayLatestItems();
             this.hideLoading();
             
         } catch (error) {
-            console.error('Failed to load blog posts:', error);
-            this.showError('Failed to load blog posts');
-            this.hideLoading();
+            console.error('Failed to load dynamic content:', error);
+            this.handleContentLoadError(error);
+        }
+    }
+    
+    handleContentLoadError(error) {
+        this.showError('Failed to load site content.');
+        this.hideLoading();
+        // Also hide latest loading state
+        const latestContainer = document.getElementById('latest-container');
+        if (latestContainer) {
+            latestContainer.innerHTML = '<p class="text-gray-600 dark:text-cream-400">Could not load latest updates.</p>';
         }
     }
     
@@ -195,16 +211,6 @@ class PersonalWebsite {
         });
         
         return { frontmatter, content };
-    }
-    
-    // Auto-discovery fallback for when blog-index.json doesn't exist
-    async autoDiscoverPosts() {
-        // This is a fallback - for full auto-discovery, you'd need a server-side component
-        // For now, we'll use a basic structure
-        console.warn('Auto-discovery not fully implemented. Please create blog-index.json');
-        this.blogPosts = [];
-        this.hideLoading();
-        this.showEmptyState();
     }
     
     updateCategoryButtons() {
@@ -479,8 +485,12 @@ class PersonalWebsite {
     }
     
     formatDate(dateString) {
-        if (!dateString) return 'Recently';
+        if (!dateString) return '';
         const date = new Date(dateString);
+        // Add a check for invalid date
+        if (isNaN(date.getTime())) {
+            return dateString; // Return original string if parsing fails
+        }
         return date.toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -679,6 +689,104 @@ class PersonalWebsite {
                 this.currentCategory = category;
                 this.renderBlogPosts(category);
             });
+        });
+    }
+
+    // Latest Items & Modal
+    displayLatestItems() {
+        const container = document.getElementById('latest-container');
+        if (!container || !this.latestUpdates) return;
+
+        container.innerHTML = ''; // Clear loading state
+
+        const createItem = (category, label) => {
+            const items = this.latestUpdates[category];
+            if (!items || items.length === 0) return;
+
+            // Assuming the first item is the latest
+            const latestItem = items[0];
+
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'flex items-center group cursor-pointer';
+            itemDiv.setAttribute('data-latest-category', category);
+
+            itemDiv.innerHTML = `
+                <span class="text-cream-600 dark:text-cream-400 mr-3 transition-transform group-hover:rotate-90">▸</span>
+                <span>
+                    ${label}: 
+                    <span class="font-medium text-cream-700 dark:text-cream-300 group-hover:underline">${this.escapeHtml(latestItem)}</span>
+                </span>
+            `;
+            container.appendChild(itemDiv);
+        };
+
+        createItem('read', 'Read');
+        createItem('watched', 'Watched');
+        createItem('building', 'Building');
+    }
+
+    setupLatestModal() {
+        const modal = document.getElementById('latest-modal');
+        const closeButton = document.getElementById('latest-modal-close');
+        const titleElement = document.getElementById('latest-modal-title');
+        const contentElement = document.getElementById('latest-modal-content');
+        const latestContainer = document.getElementById('latest-container');
+
+        if (!modal || !closeButton || !titleElement || !contentElement || !latestContainer) return;
+
+        const openModal = (category) => {
+            const items = this.latestUpdates[category];
+            const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
+            
+            titleElement.textContent = `History of Things I've ${categoryName}`;
+            
+            if (!items || items.length === 0) {
+                contentElement.innerHTML = '<p>Nothing to show here yet.</p>';
+            } else {
+                contentElement.innerHTML = `
+                    <ul class="space-y-4">
+                        ${items.map(item => `
+                            <li class="flex items-start">
+                                <span class="text-cream-500 dark:text-cream-400 mt-1 mr-4">&#9679;</span>
+                                <div>
+                                    <p class="font-semibold text-cream-800 dark:text-cream-200">${this.escapeHtml(item)}</p>
+                                </div>
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        };
+
+        const closeModal = () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        };
+
+        latestContainer.addEventListener('click', (e) => {
+            const item = e.target.closest('[data-latest-category]');
+            if (item) {
+                const category = item.dataset.latestCategory;
+                openModal(category);
+            }
+        });
+
+        closeButton.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
         });
     }
 }

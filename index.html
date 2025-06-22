@@ -569,18 +569,12 @@
                     
                     <div class="bg-cream-100 dark:bg-[#1a1a1a] p-8 rounded-2xl border border-cream-200 dark:border-cream-600">
                         <h4 class="text-xl font-bold mb-6">Latest</h4>
-                        <div class="space-y-4">
-                            <div class="flex items-center">
-                                <span class="text-cream-600 dark:text-cream-400 mr-3">▸</span>
-                                <span>Read: Why we Sleep by Matthew Walker</span>
-                            </div>
-                            <div class="flex items-center">
-                                <span class="text-cream-600 dark:text-cream-400 mr-3">▸</span>
-                                <span>Watched: Star Wars Andor</span>
-                            </div>
-                            <div class="flex items-center">
-                                <span class="text-cream-600 dark:text-cream-400 mr-3">▸</span>
-                                <span>Building: AI glasses</span>
+                        <div id="latest-container" class="space-y-4">
+                            <!-- Latest items will be loaded here dynamically -->
+                            <div class="animate-pulse space-y-4">
+                                <div class="h-6 bg-cream-200 dark:bg-[#2a2a2a] rounded w-3/4"></div>
+                                <div class="h-6 bg-cream-200 dark:bg-[#2a2a2a] rounded w-2/4"></div>
+                                <div class="h-6 bg-cream-200 dark:bg-[#2a2a2a] rounded w-3/5"></div>
                             </div>
                         </div>
                     </div>
@@ -697,6 +691,23 @@
             </div>
         </div>
     </footer>
+
+    <!-- Latest History Modal -->
+    <div id="latest-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 blog-modal">
+        <div class="bg-cream-50 dark:bg-[#1a1a1a] rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col">
+            <div class="flex items-center justify-between p-6 border-b border-cream-200 dark:border-cream-600">
+                <h3 id="latest-modal-title" class="text-2xl font-bold text-cream-600 dark:text-cream-400"></h3>
+                <button id="latest-modal-close" class="p-2 rounded-full hover:bg-cream-200 dark:hover:bg-[#2a2a2a]">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="latest-modal-content" class="p-8 overflow-y-auto">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="js/main.js"></script>
