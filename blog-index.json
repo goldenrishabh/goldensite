@@ -1,22 +1,10 @@
 {
-  "categories": {},
-  "posts": [],
-  "latestUpdates": {
-    "read": [
-      "Why We Sleep by Matthew Walker",
-      "Meditations by Marcus Aurelius",
-      "Chip War by Chris Miller",
-      "How will you measure your life by Clayton Christensen",
-      "The Monk who sold his Ferrari by Robin Sharma"
-    ],
-    "watched": [
-      "Star Wars Andor",
-      "Silicon Valley",
-      "The Mandalorian"
-    ],
-    "building": [
-      "AI glasses",
-      "Team Agnirath"
-    ]
-  }
+  "categories": {
+    "adventure": {
+      "name": "Adventure",
+      "description": "Adventure posts",
+      "color": "yellow"
+    }
+  },
+  "posts": []
 }
