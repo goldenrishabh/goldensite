@@ -161,7 +161,7 @@ class BlogPostPage {
         }
         
         if (readTimeElement) {
-            readTimeElement.textContent = this.post.readTime || 'Quick read';
+            readTimeElement.textContent = this.post.readTime || this.calculateReadingTime(this.post.content);
         }
         
         if (titleElement) {
@@ -282,6 +282,38 @@ class BlogPostPage {
         });
     }
     
+    calculateReadingTime(content) {
+        // Remove markdown syntax and HTML tags for accurate word count
+        const plainText = content
+            .replace(/#{1,6}\s/g, '') // Remove markdown headers
+            .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold markdown
+            .replace(/\*([^*]+)\*/g, '$1') // Remove italic markdown
+            .replace(/`([^`]+)`/g, '$1') // Remove inline code
+            .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links, keep text
+            .replace(/!\[([^\]]*)\]\([^)]+\)/g, '') // Remove images
+            .replace(/<[^>]*>/g, '') // Remove HTML tags
+            .replace(/\n/g, ' ') // Replace newlines with spaces
+            .trim();
+        
+        // Count words (split by whitespace and filter out empty strings)
+        const words = plainText.split(/\s+/).filter(word => word.length > 0);
+        const wordCount = words.length;
+        
+        // Average reading speed: 200-250 words per minute
+        // Using 225 words per minute as a middle ground
+        const wordsPerMinute = 225;
+        const minutes = Math.ceil(wordCount / wordsPerMinute);
+        
+        if (minutes < 1) {
+            return 'Quick read';
+        } else if (minutes === 1) {
+            return '1 min read';
+        } else {
+            return `${minutes} min read`;
+        }
+    }
+
     escapeHtml(unsafe) {
         return unsafe
             .replace(/&/g, "&amp;")

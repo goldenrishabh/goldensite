@@ -215,6 +215,48 @@
                     </div>
                 </div>
 
+                <!-- Latest Updates Section -->
+                <div class="admin-card mt-6">
+                    <h3 class="text-lg font-semibold mb-4">Latest Updates</h3>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Latest Reads -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Latest Reads</label>
+                            <div id="latest-reads-list" class="space-y-2 mb-3">
+                                <!-- Items will be populated here -->
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="new-read" class="admin-input flex-1" placeholder="Add new book/article">
+                                <button type="button" onclick="adminPanel.addLatestItem('read')" class="admin-btn admin-btn-secondary px-3">+</button>
+                            </div>
+                        </div>
+
+                        <!-- Latest Watched -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Latest Watched</label>
+                            <div id="latest-watched-list" class="space-y-2 mb-3">
+                                <!-- Items will be populated here -->
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="new-watched" class="admin-input flex-1" placeholder="Add new movie/show">
+                                <button type="button" onclick="adminPanel.addLatestItem('watched')" class="admin-btn admin-btn-secondary px-3">+</button>
+                            </div>
+                        </div>
+
+                        <!-- Latest Building -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Latest Building</label>
+                            <div id="latest-building-list" class="space-y-2 mb-3">
+                                <!-- Items will be populated here -->
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="new-building" class="admin-input flex-1" placeholder="Add new project">
+                                <button type="button" onclick="adminPanel.addLatestItem('building')" class="admin-btn admin-btn-secondary px-3">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mt-6">
                     <button id="save-content" class="admin-btn admin-btn-primary">Save Changes</button>
                 </div>
@@ -344,7 +386,8 @@
                         
                         <div>
                             <label class="block text-sm font-medium mb-2">Read Time</label>
-                            <input type="text" id="post-read-time" class="admin-input" placeholder="5 min read">
+                            <input type="text" id="post-read-time" class="admin-input" placeholder="Auto-calculated from content">
+                            <p class="text-xs text-gray-500 mt-1">Leave empty to auto-calculate based on word count</p>
                         </div>
                     </div>
                     

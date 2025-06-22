@@ -3,6 +3,7 @@ class AdminPanel {
         this.currentUser = null;
         this.posts = [];
         this.categories = {};
+        this.latestUpdates = { read: [], watched: [], building: [] };
         this.currentEditingPost = null;
         this.markdownEditor = null;
         // Remove password hash - we'll use GitHub token authentication instead
@@ -88,6 +89,46 @@ class AdminPanel {
         document.getElementById('save-content').addEventListener('click', () => {
             this.saveContent();
         });
+
+        // Latest updates - add Enter key support
+        ['read', 'watched', 'building'].forEach(category => {
+            // Will be attached after DOM elements are created
+            setTimeout(() => {
+                const input = document.getElementById(`new-${category}`);
+                if (input) {
+                    input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            this.addLatestItem(category);
+                        }
+                    });
+                }
+            }, 100);
+        });
+
+        // Real-time reading time calculation
+        setTimeout(() => {
+            const contentElement = document.getElementById('post-content');
+            const readTimeElement = document.getElementById('post-read-time');
+            
+            if (contentElement && readTimeElement) {
+                const updateReadTime = () => {
+                    // Only auto-update if the field is empty (user hasn't manually set it)
+                    if (!readTimeElement.value.trim()) {
+                        const content = this.markdownEditor ? this.markdownEditor.value() : contentElement.value;
+                        const calculatedTime = this.calculateReadingTime(content);
+                        readTimeElement.placeholder = calculatedTime;
+                    }
+                };
+                
+                // Update when content changes
+                contentElement.addEventListener('input', updateReadTime);
+                
+                // Also update when SimpleMDE changes (if available)
+                if (this.markdownEditor) {
+                    this.markdownEditor.codemirror.on('change', updateReadTime);
+                }
+            }
+        }, 200);
 
         // Category change handler - will be attached to select element after it's created
         this.setupCategoryChangeListener();
@@ -318,6 +359,7 @@ class AdminPanel {
             const data = await response.json();
             
             this.categories = data.categories || {};
+            this.latestUpdates = data.latestUpdates || { read: [], watched: [], building: [] };
             this.posts = [];
 
             // Load each post
@@ -345,12 +387,15 @@ class AdminPanel {
             this.autoDetectMissingCategories();
 
             this.renderPostsList();
+            this.renderLatestUpdates();
         } catch (error) {
             console.error('Failed to load blog data:', error);
             // Initialize with empty data if blog-index.json doesn't exist
             this.categories = {};
             this.posts = [];
+            this.latestUpdates = { read: [], watched: [], building: [] };
             this.renderPostsList();
+            this.renderLatestUpdates();
         }
     }
 
@@ -782,7 +827,8 @@ class AdminPanel {
                     id: post.id,
                     category: post.category,
                     file: post.file
-                }))
+                })),
+                latestUpdates: this.latestUpdates
             };
 
             // Get existing file to preserve SHA
@@ -867,8 +913,13 @@ class AdminPanel {
         const excerpt = document.getElementById('post-excerpt').value;
         const date = document.getElementById('post-date').value;
         const tags = document.getElementById('post-tags').value;
-        const readTime = document.getElementById('post-read-time').value;
         const content = this.markdownEditor ? this.markdownEditor.value() : document.getElementById('post-content').value;
+        
+        // Auto-calculate reading time if not manually set
+        let readTime = document.getElementById('post-read-time').value;
+        if (!readTime.trim()) {
+            readTime = this.calculateReadingTime(content);
+        }
 
         if (!title || !content) {
             alert('Please fill in at least the title and content.');
@@ -955,6 +1006,38 @@ class AdminPanel {
             .replace(/\s+/g, '-')
             .replace(/-+/g, '-')
             .trim();
+    }
+
+    calculateReadingTime(content) {
+        // Remove markdown syntax and HTML tags for accurate word count
+        const plainText = content
+            .replace(/#{1,6}\s/g, '') // Remove markdown headers
+            .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold markdown
+            .replace(/\*([^*]+)\*/g, '$1') // Remove italic markdown
+            .replace(/`([^`]+)`/g, '$1') // Remove inline code
+            .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links, keep text
+            .replace(/!\[([^\]]*)\]\([^)]+\)/g, '') // Remove images
+            .replace(/<[^>]*>/g, '') // Remove HTML tags
+            .replace(/\n/g, ' ') // Replace newlines with spaces
+            .trim();
+        
+        // Count words (split by whitespace and filter out empty strings)
+        const words = plainText.split(/\s+/).filter(word => word.length > 0);
+        const wordCount = words.length;
+        
+        // Average reading speed: 200-250 words per minute
+        // Using 225 words per minute as a middle ground
+        const wordsPerMinute = 225;
+        const minutes = Math.ceil(wordCount / wordsPerMinute);
+        
+        if (minutes < 1) {
+            return 'Quick read';
+        } else if (minutes === 1) {
+            return '1 min read';
+        } else {
+            return `${minutes} min read`;
+        }
     }
 
     generateMarkdownWithFrontmatter(frontmatter, content) {
@@ -1420,7 +1503,7 @@ class AdminPanel {
         }
     }
 
-    saveContent() {
+    async saveContent() {
         // In a real implementation, you'd update the main index.html file
         const heroTitle = document.getElementById('hero-title').value;
         const heroSubtitle = document.getElementById('hero-subtitle').value;
@@ -1433,10 +1516,18 @@ class AdminPanel {
             heroSubtitle,
             heroDescription,
             aboutText,
-            currentlyReading
+            currentlyReading,
+            latestUpdates: this.latestUpdates
         });
 
-        alert('Content saved! Click "Sync with GitHub" to publish changes.');
+        // Save latest updates to blog-index.json
+        try {
+            await this.updateBlogIndexFile();
+            alert('Content and latest updates saved! Changes have been synced to GitHub.');
+        } catch (error) {
+            console.error('Failed to save latest updates:', error);
+            alert('Content saved locally! Click "Sync with GitHub" to publish changes.');
+        }
     }
 
     async testGitHubConnection() {
@@ -1544,6 +1635,61 @@ class AdminPanel {
         // Reset button state
         testBtn.textContent = originalText;
         testBtn.disabled = false;
+    }
+
+    renderLatestUpdates() {
+        const categories = ['read', 'watched', 'building'];
+        
+        categories.forEach(category => {
+            const container = document.getElementById(`latest-${category}-list`);
+            if (!container) return;
+            
+            const items = this.latestUpdates[category] || [];
+            container.innerHTML = items.map((item, index) => `
+                <div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                    <span class="text-sm">${this.escapeHtml(item)}</span>
+                    <button onclick="adminPanel.removeLatestItem('${category}', ${index})" class="text-red-500 hover:text-red-700 text-xs ml-2">×</button>
+                </div>
+            `).join('');
+        });
+    }
+
+    addLatestItem(category) {
+        const input = document.getElementById(`new-${category}`);
+        if (!input) return;
+        
+        const value = input.value.trim();
+        if (!value) return;
+        
+        if (!this.latestUpdates[category]) {
+            this.latestUpdates[category] = [];
+        }
+        
+        this.latestUpdates[category].unshift(value); // Add to beginning
+        
+        // Keep only the last 5 items
+        if (this.latestUpdates[category].length > 5) {
+            this.latestUpdates[category] = this.latestUpdates[category].slice(0, 5);
+        }
+        
+        input.value = '';
+        this.renderLatestUpdates();
+    }
+
+    removeLatestItem(category, index) {
+        if (!this.latestUpdates[category]) return;
+        
+        this.latestUpdates[category].splice(index, 1);
+        this.renderLatestUpdates();
+    }
+
+    escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     clearCache() {
