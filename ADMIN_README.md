@@ -79,6 +79,100 @@ The system will:
 - **One-click sync** to publish all changes
 - **Error handling** with detailed messages
 
+## ✨ Draft/Publish System
+
+### 📝 **Smart Status Management**
+- **Draft Posts**: Saved privately in `admin-drafts/` folder on GitHub
+- **Published Posts**: Live in `static-blog/` folder and appear on your website
+- **Automatic File Management**: Posts move between folders when status changes
+- **No Data Loss**: All drafts are safely stored in your GitHub repository
+
+### 🎯 **How It Works**
+
+#### **Creating Posts**
+1. Click "New Post" - defaults to Draft status
+2. Write your content and click "📝 Save Draft"
+3. Post is saved to `admin-drafts/{category}/{post-id}.txt` on GitHub
+4. Completely private - won't appear on your website
+
+#### **Publishing Posts**
+1. When ready, click "🌐 Save & Publish" or "Publish" button
+2. Post moves from `admin-drafts/` to `static-blog/` folder
+3. Appears in `blog-index.json` for public consumption
+4. Goes live on your website immediately
+
+#### **Managing Status**
+- **Quick Toggle**: Use Publish/Unpublish buttons in the post list
+- **Bulk View**: Filter by "All Posts", "Published", or "Drafts"
+- **Visual Feedback**: Draft posts have yellow highlighting
+- **Real-time Counts**: Dashboard shows total, published, and draft counts
+
+### 🔒 **Privacy & Security**
+
+#### **Draft Protection**
+- Drafts stored in `admin-drafts/` folder (not in public `static-blog/`)
+- Never included in `blog-index.json`
+- GitHub repository keeps them, but they're not web-accessible
+- Only you (with admin access) can see drafts
+
+#### **Published Content**
+- Lives in `static-blog/` folder
+- Included in public `blog-index.json`
+- Automatically appears on your website
+- Visible to all website visitors
+
+### 📁 **File Structure**
+
+```
+├── admin-drafts/           # Private drafts (GitHub only)
+│   ├── technical/
+│   │   ├── my-draft-post.txt
+│   │   └── work-in-progress.txt
+│   ├── personal/
+│   └── ...
+├── static-blog/            # Published content (public)
+│   ├── technical/
+│   │   ├── published-post.txt
+│   │   └── live-tutorial.txt
+│   ├── images/
+│   └── ...
+└── blog-index.json         # Only includes published posts
+```
+
+### 🔄 **Sync Behavior**
+
+#### **What Gets Synced**
+- **Published Posts**: Synced to `static-blog/` → appear on website
+- **Draft Posts**: Synced to `admin-drafts/` → kept private
+- **Status Changes**: Files automatically move between folders
+
+#### **Sync Process**
+1. Published posts → `static-blog/` folder
+2. Draft posts → `admin-drafts/` folder  
+3. `blog-index.json` updated with only published posts
+4. Your website shows only published content
+
+### 💡 **Workflow Examples**
+
+#### **Writing a New Post**
+1. Click "New Post" 
+2. Write content, save as draft multiple times
+3. Preview locally if needed
+4. When satisfied, click "Save & Publish"
+5. Post goes live immediately
+
+#### **Unpublishing a Post**
+1. Find published post in list
+2. Click "Unpublish" 
+3. Post moves to drafts, disappears from website
+4. Edit and republish when ready
+
+#### **Managing Multiple Drafts**
+1. Use "📝 Drafts" filter to see all work-in-progress
+2. Edit and save drafts as many times as needed
+3. Publish individual posts when ready
+4. Keep others as drafts for future work
+
 ## How to Use
 
 ### Creating a New Blog Post

@@ -387,24 +387,33 @@ class AdminPanel {
             this.latestUpdates = data.latestUpdates || { read: [], watched: [], building: [] };
             this.posts = [];
 
-            // Load each post
+            // Load published posts from blog-index.json
             if (data.posts && data.posts.length > 0) {
-            for (const postInfo of data.posts) {
-                try {
-                    const postResponse = await fetch(postInfo.file);
-                    const content = await postResponse.text();
-                    const parsed = this.parseMarkdownWithFrontmatter(content);
-                    
-                    this.posts.push({
-                        id: postInfo.id,
-                        category: postInfo.category,
-                        file: postInfo.file,
-                        ...parsed.frontmatter,
-                        content: parsed.content
-                    });
-                } catch (error) {
-                    console.error(`Failed to load post ${postInfo.file}:`, error);
+                for (const postInfo of data.posts) {
+                    try {
+                        const postResponse = await fetch(postInfo.file);
+                        const content = await postResponse.text();
+                        const parsed = this.parseMarkdownWithFrontmatter(content);
+                        
+                        this.posts.push({
+                            id: postInfo.id,
+                            category: postInfo.category,
+                            file: postInfo.file,
+                            ...parsed.frontmatter,
+                            content: parsed.content
+                        });
+                    } catch (error) {
+                        console.error(`Failed to load post ${postInfo.file}:`, error);
                     }
+                }
+            }
+
+            // Try to load draft posts from GitHub (admin-drafts folder)
+            if (this.githubToken) {
+                try {
+                    await this.loadDraftPosts();
+                } catch (error) {
+                    console.warn('Could not load draft posts:', error);
                 }
             }
 
@@ -421,6 +430,63 @@ class AdminPanel {
             this.latestUpdates = { read: [], watched: [], building: [] };
             this.renderPostsList();
             this.renderLatestUpdates();
+        }
+    }
+
+    async loadDraftPosts() {
+        try {
+            // Get admin-drafts folder contents
+            const draftsResponse = await this.githubRequest(`/repos/${this.githubRepo}/contents/admin-drafts`);
+            
+            if (Array.isArray(draftsResponse)) {
+                // Process each category folder in admin-drafts
+                for (const categoryItem of draftsResponse) {
+                    if (categoryItem.type === 'dir') {
+                        const categoryName = categoryItem.name;
+                        
+                        try {
+                            // Get files in this category folder
+                            const categoryFiles = await this.githubRequest(`/repos/${this.githubRepo}/contents/admin-drafts/${categoryName}`);
+                            
+                            for (const file of categoryFiles) {
+                                if (file.name.endsWith('.txt')) {
+                                    try {
+                                        // Get file content
+                                        const fileResponse = await this.githubRequest(`/repos/${this.githubRepo}/contents/${file.path}`);
+                                        const content = atob(fileResponse.content); // Decode base64
+                                        const parsed = this.parseMarkdownWithFrontmatter(content);
+                                        
+                                        const postId = file.name.replace('.txt', '');
+                                        
+                                        // Check if this draft is already loaded (avoid duplicates)
+                                        const existingPost = this.posts.find(p => p.id === postId);
+                                        if (!existingPost) {
+                                            this.posts.push({
+                                                id: postId,
+                                                category: categoryName,
+                                                file: `admin-drafts/${categoryName}/${file.name}`,
+                                                ...parsed.frontmatter,
+                                                status: 'draft', // Ensure draft status
+                                                content: parsed.content
+                                            });
+                                            console.log(`✅ Loaded draft: ${postId}`);
+                                        }
+                                    } catch (error) {
+                                        console.warn(`Failed to load draft file ${file.path}:`, error);
+                                    }
+                                }
+                            }
+                        } catch (error) {
+                            console.warn(`Failed to load category folder ${categoryName}:`, error);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            // If admin-drafts folder doesn't exist, that's fine
+            if (!error.message.includes('404')) {
+                console.warn('Error loading drafts:', error);
+            }
         }
     }
 
@@ -1153,26 +1219,96 @@ class AdminPanel {
         const post = this.posts.find(p => p.id === postId);
         if (!post) return;
 
-        post.status = 'published';
-        
-        // Update blog-index.json immediately
-        await this.updateBlogIndexFile();
-        
-        this.renderPostsList();
-        alert('Post published successfully!');
+        try {
+            const oldStatus = post.status || 'published';
+            post.status = 'published';
+            
+            // If moving from draft to published, we need to move the file
+            if (oldStatus === 'draft' && this.githubToken) {
+                const draftFile = `admin-drafts/${post.category}/${postId}.txt`;
+                const publishedFile = `static-blog/${post.category}/${postId}.txt`;
+                
+                try {
+                    // Get draft content
+                    const draftFileData = await this.getFileFromGitHub(draftFile);
+                    
+                    // Create published file
+                    await this.createOrUpdateFileInGitHub(
+                        publishedFile,
+                        draftFileData.content,
+                        `Publish post: ${post.title}`,
+                        null
+                    );
+                    
+                    // Delete draft file
+                    await this.deleteFileFromGitHub(draftFile, `Remove draft after publishing: ${post.title}`);
+                    
+                    // Update post file reference
+                    post.file = publishedFile;
+                    
+                    console.log(`✅ Moved post from draft to published: ${postId}`);
+                } catch (error) {
+                    console.warn('Could not move file on GitHub:', error);
+                }
+            }
+            
+            // Update blog-index.json immediately
+            await this.updateBlogIndexFile();
+            
+            this.renderPostsList();
+            alert('🌐 Post published successfully!\n\nYour post is now live on your website!');
+        } catch (error) {
+            console.error('Failed to publish post:', error);
+            alert('Failed to publish post. Please try again.');
+        }
     }
 
     async unpublishPost(postId) {
         const post = this.posts.find(p => p.id === postId);
         if (!post) return;
 
-        post.status = 'draft';
-        
-        // Update blog-index.json immediately
-        await this.updateBlogIndexFile();
-        
-        this.renderPostsList();
-        alert('Post moved to draft!');
+        try {
+            const oldStatus = post.status || 'published';
+            post.status = 'draft';
+            
+            // If moving from published to draft, we need to move the file
+            if (oldStatus === 'published' && this.githubToken) {
+                const publishedFile = `static-blog/${post.category}/${postId}.txt`;
+                const draftFile = `admin-drafts/${post.category}/${postId}.txt`;
+                
+                try {
+                    // Get published content
+                    const publishedFileData = await this.getFileFromGitHub(publishedFile);
+                    
+                    // Create draft file
+                    await this.createOrUpdateFileInGitHub(
+                        draftFile,
+                        publishedFileData.content,
+                        `Move to draft: ${post.title}`,
+                        null
+                    );
+                    
+                    // Delete published file
+                    await this.deleteFileFromGitHub(publishedFile, `Remove from public after moving to draft: ${post.title}`);
+                    
+                    // Update post file reference
+                    post.file = draftFile;
+                    
+                    console.log(`✅ Moved post from published to draft: ${postId}`);
+                } catch (error) {
+                    console.warn('Could not move file on GitHub:', error);
+                }
+            }
+            
+            // Update blog-index.json immediately
+            await this.updateBlogIndexFile();
+            
+            this.renderPostsList();
+            alert('📝 Post moved to draft!\n\nThe post is no longer visible on your public website.');
+        } catch (error) {
+            console.error('Failed to unpublish post:', error);
+            alert('Failed to move post to draft. Please try again.');
+        }
     }
 
     filterPostsByStatus(status) {
@@ -1483,26 +1619,48 @@ class AdminPanel {
                 }
             }
 
-            // Sync only published posts that have been modified
+            // Sync all posts (published to public, drafts to private folder)
             let syncedPosts = 0;
+            let syncedDrafts = 0;
             let failedPosts = 0;
             
-            for (const post of publishedPosts) {
+            for (const post of this.posts) {
                 const postContent = localStorage.getItem(`post-${post.id}`);
                 if (postContent) {
                     try {
-                        console.log(`Syncing post: ${post.id}`);
-                        const existingFile = await this.getFileFromGitHub(post.file);
+                        const postStatus = post.status || 'published';
+                        let filePath, commitMessage;
+                        
+                        if (postStatus === 'draft') {
+                            // Save drafts in a private admin folder
+                            filePath = `admin-drafts/${post.category}/${post.id}.txt`;
+                            commitMessage = `Update draft: ${post.title}`;
+                            console.log(`Syncing draft: ${post.id}`);
+                        } else {
+                            // Save published posts in public folder
+                            filePath = post.file;
+                            commitMessage = `Update post: ${post.title}`;
+                            console.log(`Syncing published post: ${post.id}`);
+                        }
+                        
+                        const existingFile = await this.getFileFromGitHub(filePath);
                         await this.createOrUpdateFileInGitHub(
-                            post.file,
+                            filePath,
                             postContent,
-                            `Update post: ${post.title}`,
+                            commitMessage,
                             existingFile?.sha
                         );
+                        
                         // Remove from localStorage after successful sync
                         localStorage.removeItem(`post-${post.id}`);
-                        syncedPosts++;
-                        console.log(`✅ Synced: ${post.id}`);
+                        
+                        if (postStatus === 'draft') {
+                            syncedDrafts++;
+                            console.log(`✅ Synced draft: ${post.id}`);
+                        } else {
+                            syncedPosts++;
+                            console.log(`✅ Synced published post: ${post.id}`);
+                        }
                     } catch (error) {
                         console.error(`Failed to sync post ${post.id}:`, error);
                         failedPosts++;
@@ -1513,18 +1671,17 @@ class AdminPanel {
             // Show success message with details
             let message = 'Successfully synced with GitHub!';
             if (syncedPosts > 0) {
-                message += `\n\n📝 ${syncedPosts} published post(s) synced`;
+                message += `\n\n🌐 ${syncedPosts} published post(s) synced to public site`;
+            }
+            if (syncedDrafts > 0) {
+                message += `\n\n📝 ${syncedDrafts} draft(s) saved to admin-drafts folder`;
             }
             if (failedPosts > 0) {
-                message += `\n⚠️ ${failedPosts} post(s) failed to sync`;
-            }
-            
-            const draftCount = this.posts.filter(post => (post.status || 'published') === 'draft').length;
-            if (draftCount > 0) {
-                message += `\n\n📝 ${draftCount} draft post(s) kept private (not synced)`;
+                message += `\n\n⚠️ ${failedPosts} post(s) failed to sync`;
             }
             
             message += '\n\n🚀 Published content is now live on your website!';
+            message += '\n📁 Drafts are safely stored in admin-drafts/ folder';
             
             alert(message);
             
