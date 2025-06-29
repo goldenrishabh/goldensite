@@ -119,11 +119,6 @@
                     <input type="password" id="admin-password" class="admin-input" placeholder="ghp_xxxxxxxxxxxx">
                     <p class="text-xs text-gray-500 mt-1">Classic token with 'repo' permissions required</p>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-2">Repository (optional)</label>
-                    <input type="text" id="admin-repo" class="admin-input" placeholder="username/repository" value="goldenrishabh/goldensite">
-                    <p class="text-xs text-gray-500 mt-1">Leave default or specify your repository</p>
-                </div>
                 <button type="submit" class="admin-btn admin-btn-primary w-full">Verify & Access</button>
             </form>
             <div id="login-error" class="hidden mt-4 p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-md text-sm"></div>
@@ -148,9 +143,9 @@
                         </span>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <button id="sync-github" class="admin-btn admin-btn-primary">
-                            🔄 Sync with GitHub
-                        </button>
+                        <div id="sync-status" class="text-sm px-3 py-1 rounded-full hidden">
+                            <span class="text-green-600">✅ Auto-synced</span>
+                        </div>
                         <button id="logout-btn" class="admin-btn admin-btn-secondary">
                             Logout
                         </button>
@@ -344,12 +339,13 @@
                         <div>
                             <label class="block text-sm font-medium mb-2">GitHub Token</label>
                             <input type="password" id="github-token" class="admin-input" placeholder="Enter GitHub personal access token">
-                            <p class="text-sm text-gray-500 mt-1">Required for pushing changes to GitHub</p>
+                            <p class="text-sm text-gray-500 mt-1">Required for auto-syncing changes to GitHub</p>
                         </div>
                         
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Repository</label>
-                            <input type="text" id="github-repo" class="admin-input" placeholder="username/repository" value="goldenrishabh/goldensite">
+                        <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <p class="text-sm text-blue-700 dark:text-blue-300">
+                                <strong>Repository:</strong> goldenrishabh/goldensite (configured)
+                            </p>
                         </div>
                         
                         <div class="flex space-x-4">

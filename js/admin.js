@@ -8,7 +8,7 @@ class AdminPanel {
         this.markdownEditor = null;
         // Remove password hash - we'll use GitHub token authentication instead
         this.githubToken = localStorage.getItem('github-token') || '';
-        this.githubRepo = localStorage.getItem('github-repo') || 'goldenrishabh/goldensite';
+        this.githubRepo = 'goldenrishabh/goldensite'; // Fixed repository
         this.githubApiBase = 'https://api.github.com';
         
         this.init();
@@ -74,10 +74,8 @@ class AdminPanel {
             this.deletePost();
         });
 
-        // GitHub sync
-        document.getElementById('sync-github').addEventListener('click', () => {
-            this.syncWithGitHub();
-        });
+        // Auto-sync status indicator
+        this.setupAutoSyncIndicator();
 
         // Settings
         document.getElementById('save-settings').addEventListener('click', () => {
@@ -173,7 +171,6 @@ class AdminPanel {
 
     async handleLogin() {
         const token = document.getElementById('admin-password').value; // Using password field for token
-        const repoInput = document.getElementById('admin-repo').value || this.githubRepo;
         const errorEl = document.getElementById('login-error');
 
         if (!token.trim()) {
@@ -190,7 +187,7 @@ class AdminPanel {
 
         try {
             // Verify GitHub token by making a test API call
-            const response = await fetch(`${this.githubApiBase}/repos/${repoInput}`, {
+            const response = await fetch(`${this.githubApiBase}/repos/${this.githubRepo}`, {
                 headers: {
                     'Authorization': `token ${token}`,
                     'Accept': 'application/vnd.github.v3+json'
@@ -204,11 +201,9 @@ class AdminPanel {
                 if (repoData.permissions && (repoData.permissions.push || repoData.permissions.admin)) {
                     // Authentication successful
                     this.githubToken = token;
-                    this.githubRepo = repoInput;
                     
                     // Save credentials
                     localStorage.setItem('github-token', token);
-                    localStorage.setItem('github-repo', repoInput);
                     
                     // Hide login modal and show admin panel
                     document.getElementById('login-modal').classList.add('hidden');
@@ -247,7 +242,6 @@ class AdminPanel {
         document.getElementById('login-modal').classList.remove('hidden');
         document.getElementById('admin-panel').classList.add('hidden');
         document.getElementById('admin-password').value = '';
-        document.getElementById('admin-repo').value = '';
         
         // Optionally clear stored credentials
         // localStorage.removeItem('github-token');
@@ -276,16 +270,10 @@ class AdminPanel {
     async loadData() {
         // Load settings from localStorage
         const githubToken = localStorage.getItem('github-token');
-        const githubRepo = localStorage.getItem('github-repo');
 
         if (githubToken) {
             document.getElementById('github-token').value = githubToken;
             this.githubToken = githubToken;
-        }
-
-        if (githubRepo) {
-            document.getElementById('github-repo').value = githubRepo;
-            this.githubRepo = githubRepo;
         }
 
         await this.loadBlogData();
@@ -1096,13 +1084,17 @@ class AdminPanel {
         const markdownContent = this.generateMarkdownWithFrontmatter(frontmatter, content);
 
         try {
-            // Save to localStorage for now (in real implementation, you'd save to filesystem)
+            // Determine file path based on status
+            const filePath = status === 'draft' 
+                ? `admin-drafts/${category}/${id}.txt`
+                : `static-blog/${category}/${id}.txt`;
+
             const postData = {
                 id,
                 category,
                 ...frontmatter,
                 content,
-                file: `static-blog/${category}/${id}.txt`
+                file: filePath
             };
 
             if (this.currentEditingPost) {
@@ -1115,12 +1107,17 @@ class AdminPanel {
             // Save to browser storage (temporary solution)
             localStorage.setItem(`post-${id}`, markdownContent);
             
+            // Auto-sync to GitHub
+            await this.autoSyncPost(postData, status);
+            
             // Update blog-index.json immediately
             await this.updateBlogIndexFile();
             
             this.renderPostsList();
             this.renderCategoriesList(); // Update categories list to show new post counts
             this.closePostEditor();
+            
+            this.showSyncStatus('synced');
             
             if (status === 'draft') {
                 alert('📝 Post saved as draft!\n\nThe post is saved but won\'t appear on your public website until you publish it.');
@@ -1243,8 +1240,9 @@ class AdminPanel {
                     // Delete draft file
                     await this.deleteFileFromGitHub(draftFile, `Remove draft after publishing: ${post.title}`);
                     
-                    // Update post file reference
+                    // Update post file reference and ensure status is set correctly
                     post.file = publishedFile;
+                    post.status = 'published';
                     
                     console.log(`✅ Moved post from draft to published: ${postId}`);
                 } catch (error) {
@@ -1256,6 +1254,7 @@ class AdminPanel {
             await this.updateBlogIndexFile();
             
             this.renderPostsList();
+            this.showSyncStatus('synced');
             alert('🌐 Post published successfully!\n\nYour post is now live on your website!');
         } catch (error) {
             console.error('Failed to publish post:', error);
@@ -1291,8 +1290,9 @@ class AdminPanel {
                     // Delete published file
                     await this.deleteFileFromGitHub(publishedFile, `Remove from public after moving to draft: ${post.title}`);
                     
-                    // Update post file reference
+                    // Update post file reference and ensure status is set correctly
                     post.file = draftFile;
+                    post.status = 'draft';
                     
                     console.log(`✅ Moved post from published to draft: ${postId}`);
                 } catch (error) {
@@ -1304,6 +1304,7 @@ class AdminPanel {
             await this.updateBlogIndexFile();
             
             this.renderPostsList();
+            this.showSyncStatus('synced');
             alert('📝 Post moved to draft!\n\nThe post is no longer visible on your public website.');
         } catch (error) {
             console.error('Failed to unpublish post:', error);
@@ -1536,210 +1537,14 @@ class AdminPanel {
         }
     }
 
-    async syncWithGitHub() {
-        if (!this.githubToken) {
-            alert('Please set your GitHub token in Settings first.');
-            return;
-        }
-
-        try {
-            // Update sync button to show loading
-            const syncBtn = document.getElementById('sync-github');
-            const originalText = syncBtn.textContent;
-            syncBtn.textContent = '🔄 Syncing...';
-            syncBtn.disabled = true;
-
-            // First, test authentication by checking repository access
-            console.log('Testing GitHub authentication...');
-            try {
-                await this.githubRequest(`/repos/${this.githubRepo}`);
-                console.log('✅ Authentication successful');
-            } catch (authError) {
-                if (authError.message.includes('401')) {
-                    throw new Error('Invalid GitHub token. Please check your token in Settings and make sure it has "repo" permissions.');
-                } else if (authError.message.includes('404')) {
-                    throw new Error(`Repository "${this.githubRepo}" not found. Please check the repository name in Settings.`);
-                } else {
-                    throw new Error(`Authentication failed: ${authError.message}`);
-                }
-            }
-
-            // Generate new blog-index.json - only include published posts for public site
-            const publishedPosts = this.posts.filter(post => (post.status || 'published') === 'published');
-            const blogIndex = {
-                categories: this.categories,
-                posts: publishedPosts.map(post => ({
-                    id: post.id,
-                    category: post.category,
-                    file: post.file
-                })),
-                latestUpdates: this.latestUpdates
-            };
-
-            // Update blog-index.json on GitHub
-            console.log('Updating blog-index.json...');
-            try {
-                const existingFile = await this.getFileFromGitHub('blog-index.json');
-                await this.createOrUpdateFileInGitHub(
-                    'blog-index.json',
-                    JSON.stringify(blogIndex, null, 2),
-                    'Update blog index via admin panel',
-                    existingFile?.sha
-                );
-                console.log('✅ Blog index updated');
-            } catch (error) {
-                console.error('Failed to update blog-index.json:', error);
-                throw new Error(`Failed to update blog index: ${error.message}`);
-            }
-
-            // Create category directories if needed
-            console.log('Checking category directories...');
-            for (const [categoryKey, categoryInfo] of Object.entries(this.categories)) {
-                try {
-                    const categoryPath = `static-blog/${categoryKey}`;
-                    // Try to get the directory - if it fails, we'll create a README to establish it
-                    try {
-                        await this.githubRequest(`/repos/${this.githubRepo}/contents/${categoryPath}`);
-                        console.log(`✅ Category directory exists: ${categoryKey}`);
-                    } catch (error) {
-                        if (error.message.includes('404')) {
-                            // Directory doesn't exist, create it with a README
-                            console.log(`Creating directory for category: ${categoryKey}`);
-                            const readmeContent = `# ${categoryInfo.name}\n\n${categoryInfo.description}\n\nThis directory contains ${categoryInfo.name} blog posts.`;
-                            await this.createOrUpdateFileInGitHub(
-                                `${categoryPath}/README.md`,
-                                readmeContent,
-                                `Create ${categoryInfo.name} category directory`
-                            );
-                            console.log(`✅ Created directory: ${categoryKey}`);
-                        }
-                    }
-                } catch (error) {
-                    console.warn(`Failed to create directory for category ${categoryKey}:`, error);
-                }
-            }
-
-            // Sync all posts (published to public, drafts to private folder)
-            let syncedPosts = 0;
-            let syncedDrafts = 0;
-            let failedPosts = 0;
-            
-            for (const post of this.posts) {
-                const postContent = localStorage.getItem(`post-${post.id}`);
-                if (postContent) {
-                    try {
-                        const postStatus = post.status || 'published';
-                        let filePath, commitMessage;
-                        
-                        if (postStatus === 'draft') {
-                            // Save drafts in a private admin folder
-                            filePath = `admin-drafts/${post.category}/${post.id}.txt`;
-                            commitMessage = `Update draft: ${post.title}`;
-                            console.log(`Syncing draft: ${post.id}`);
-                        } else {
-                            // Save published posts in public folder
-                            filePath = post.file;
-                            commitMessage = `Update post: ${post.title}`;
-                            console.log(`Syncing published post: ${post.id}`);
-                        }
-                        
-                        const existingFile = await this.getFileFromGitHub(filePath);
-                        await this.createOrUpdateFileInGitHub(
-                            filePath,
-                            postContent,
-                            commitMessage,
-                            existingFile?.sha
-                        );
-                        
-                        // Remove from localStorage after successful sync
-                        localStorage.removeItem(`post-${post.id}`);
-                        
-                        if (postStatus === 'draft') {
-                            syncedDrafts++;
-                            console.log(`✅ Synced draft: ${post.id}`);
-                        } else {
-                            syncedPosts++;
-                            console.log(`✅ Synced published post: ${post.id}`);
-                        }
-                    } catch (error) {
-                        console.error(`Failed to sync post ${post.id}:`, error);
-                        failedPosts++;
-                    }
-                }
-            }
-
-            // Show success message with details
-            let message = 'Successfully synced with GitHub!';
-            if (syncedPosts > 0) {
-                message += `\n\n🌐 ${syncedPosts} published post(s) synced to public site`;
-            }
-            if (syncedDrafts > 0) {
-                message += `\n\n📝 ${syncedDrafts} draft(s) saved to admin-drafts folder`;
-            }
-            if (failedPosts > 0) {
-                message += `\n\n⚠️ ${failedPosts} post(s) failed to sync`;
-            }
-            
-            message += '\n\n🚀 Published content is now live on your website!';
-            message += '\n📁 Drafts are safely stored in admin-drafts/ folder';
-            
-            alert(message);
-            
-            syncBtn.textContent = originalText;
-            syncBtn.disabled = false;
-        } catch (error) {
-            console.error('Failed to sync with GitHub:', error);
-            
-            // Provide helpful error messages based on the error type
-            let errorMessage = 'Failed to sync with GitHub:\n\n';
-            
-            if (error.message.includes('Invalid GitHub token')) {
-                errorMessage += '🔐 Authentication Error:\n';
-                errorMessage += error.message + '\n\n';
-                errorMessage += '💡 To fix this:\n';
-                errorMessage += '1. Go to GitHub Settings → Developer settings → Personal access tokens\n';
-                errorMessage += '2. Generate a new classic token with "repo" scope\n';
-                errorMessage += '3. Update your token in the Settings tab';
-            } else if (error.message.includes('not found')) {
-                errorMessage += '📁 Repository Error:\n';
-                errorMessage += error.message + '\n\n';
-                errorMessage += '💡 To fix this:\n';
-                errorMessage += '1. Check the repository name in Settings\n';
-                errorMessage += '2. Make sure the repository exists\n';
-                errorMessage += '3. Ensure your token has access to this repository';
-            } else if (error.message.includes('403')) {
-                errorMessage += '🚫 Permission Error:\n';
-                errorMessage += 'You don\'t have write access to this repository.\n\n';
-                errorMessage += '💡 To fix this:\n';
-                errorMessage += '1. Make sure you own the repository\n';
-                errorMessage += '2. Or ask the owner to add you as a collaborator\n';
-                errorMessage += '3. Regenerate your token with "repo" scope';
-            } else {
-                errorMessage += '❌ Sync Error:\n';
-                errorMessage += error.message + '\n\n';
-                errorMessage += '💡 Please check:\n';
-                errorMessage += '1. Your internet connection\n';
-                errorMessage += '2. GitHub token permissions\n';
-                errorMessage += '3. Repository settings';
-            }
-            
-            alert(errorMessage);
-            
-            const syncBtn = document.getElementById('sync-github');
-            syncBtn.textContent = '🔄 Sync with GitHub';
-            syncBtn.disabled = false;
-        }
-    }
+    // Auto-sync is now used instead of manual sync
 
     saveSettings() {
         const githubToken = document.getElementById('github-token').value;
-        const githubRepo = document.getElementById('github-repo').value;
 
         localStorage.setItem('github-token', githubToken);
-        localStorage.setItem('github-repo', githubRepo);
 
         this.githubToken = githubToken;
-        this.githubRepo = githubRepo;
 
         alert('Settings saved!');
     }
@@ -1760,20 +1565,27 @@ class AdminPanel {
                         const filePath = `static-blog/images/${fileName}`;
                         
                         try {
+                            this.showSyncStatus('syncing');
                             await this.createOrUpdateFileInGitHub(
                                 filePath,
                                 content, // Keep as base64 for GitHub API
                                 `Upload image: ${fileName}`,
                                 (await this.getFileFromGitHub(filePath))?.sha
                             );
+                            
+                            // Reload file list to show the new file
+                            await this.loadFileList();
+                            this.showSyncStatus('synced');
                             alert(`Image ${fileName} uploaded successfully!`);
                         } catch (error) {
+                            this.showSyncStatus('error');
                             alert(`Failed to upload ${fileName}: ${error.message}`);
                         }
                     };
                     reader.readAsDataURL(file);
                 } catch (error) {
                     console.error('File upload error:', error);
+                    this.showSyncStatus('error');
                     alert(`Failed to upload ${file.name}: ${error.message}`);
                 }
             }
@@ -1808,7 +1620,12 @@ class AdminPanel {
             }
 
             fileList.innerHTML = imageFiles.map(file => `
-                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 relative group">
+                    <button onclick="adminPanel.deleteFile('${file.path}', '${file.name}', '${file.sha}')" 
+                            class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
+                            title="Delete ${file.name}">
+                        ×
+                    </button>
                     <img src="${file.download_url}" alt="${file.name}" class="w-full h-24 object-cover rounded mb-2">
                     <p class="text-sm font-medium truncate">${file.name}</p>
                     <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</p>
@@ -1844,17 +1661,20 @@ class AdminPanel {
 
         // Save latest updates to blog-index.json
         try {
+            this.showSyncStatus('syncing');
             await this.updateBlogIndexFile();
-            alert('Content and latest updates saved! Changes have been synced to GitHub.');
+            this.showSyncStatus('synced');
+            alert('Content and latest updates saved! Changes have been auto-synced to GitHub.');
         } catch (error) {
             console.error('Failed to save latest updates:', error);
-            alert('Content saved locally! Click "Sync with GitHub" to publish changes.');
+            this.showSyncStatus('error');
+            alert('Failed to save content. Please check your GitHub token.');
         }
     }
 
     async testGitHubConnection() {
         const token = document.getElementById('github-token').value || this.githubToken;
-        const repo = document.getElementById('github-repo').value || this.githubRepo;
+        const repo = this.githubRepo;
         
         if (!token) {
             alert('Please enter a GitHub token first.');
@@ -2033,6 +1853,108 @@ class AdminPanel {
             // Reload the page to refresh everything
             alert(`✅ Cache cleared! Removed ${keysToRemove.length} cached items. The page will now reload.`);
             window.location.reload();
+        }
+    }
+
+    setupAutoSyncIndicator() {
+        // Show sync status briefly after operations
+        this.syncStatusTimeout = null;
+    }
+
+    showSyncStatus(type) {
+        const statusEl = document.getElementById('sync-status');
+        if (!statusEl) return;
+
+        clearTimeout(this.syncStatusTimeout);
+        
+        if (type === 'syncing') {
+            statusEl.innerHTML = '<span class="text-blue-600">🔄 Syncing...</span>';
+            statusEl.classList.remove('hidden');
+        } else if (type === 'synced') {
+            statusEl.innerHTML = '<span class="text-green-600">✅ Auto-synced</span>';
+            statusEl.classList.remove('hidden');
+            
+            // Hide after 3 seconds
+            this.syncStatusTimeout = setTimeout(() => {
+                statusEl.classList.add('hidden');
+            }, 3000);
+        } else if (type === 'error') {
+            statusEl.innerHTML = '<span class="text-red-600">❌ Sync failed</span>';
+            statusEl.classList.remove('hidden');
+            
+            // Hide after 5 seconds
+            this.syncStatusTimeout = setTimeout(() => {
+                statusEl.classList.add('hidden');
+            }, 5000);
+        }
+    }
+
+    async autoSyncPost(postData, status) {
+        if (!this.githubToken) {
+            console.warn('No GitHub token - skipping auto-sync');
+            return;
+        }
+
+        this.showSyncStatus('syncing');
+
+        try {
+            const postContent = localStorage.getItem(`post-${postData.id}`);
+            if (!postContent) return;
+
+            let filePath, commitMessage;
+            
+            if (status === 'draft') {
+                filePath = `admin-drafts/${postData.category}/${postData.id}.txt`;
+                commitMessage = `Auto-save draft: ${postData.title}`;
+            } else {
+                filePath = `static-blog/${postData.category}/${postData.id}.txt`;
+                commitMessage = `Auto-publish post: ${postData.title}`;
+            }
+
+            const existingFile = await this.getFileFromGitHub(filePath);
+            await this.createOrUpdateFileInGitHub(
+                filePath,
+                postContent,
+                commitMessage,
+                existingFile?.sha
+            );
+
+            // Remove from localStorage after successful sync
+            localStorage.removeItem(`post-${postData.id}`);
+            
+            console.log(`✅ Auto-synced: ${postData.id}`);
+        } catch (error) {
+            console.error('Auto-sync failed:', error);
+            this.showSyncStatus('error');
+            throw error; // Re-throw to handle in calling function
+        }
+    }
+
+    async deleteFile(filePath, fileName, sha) {
+        if (!confirm(`Are you sure you want to delete "${fileName}"?\n\nThis action cannot be undone.`)) {
+            return;
+        }
+
+        if (!this.githubToken) {
+            alert('GitHub token required to delete files.');
+            return;
+        }
+
+        try {
+            this.showSyncStatus('syncing');
+            
+            await this.deleteFileFromGitHub(filePath, `Delete image: ${fileName}`);
+            
+            // Reload file list to reflect changes
+            await this.loadFileList();
+            
+            this.showSyncStatus('synced');
+            alert(`✅ File "${fileName}" deleted successfully!`);
+            
+        } catch (error) {
+            console.error('Failed to delete file:', error);
+            this.showSyncStatus('error');
+            alert(`❌ Failed to delete "${fileName}".\n\nError: ${error.message}`);
         }
     }
 }
