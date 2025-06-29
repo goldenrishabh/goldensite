@@ -6,13 +6,7 @@
       "color": "yellow"
     }
   },
-  "posts": [
-    {
-      "id": "test",
-      "category": "adventure",
-      "file": "static-blog/adventure/test.txt"
-    }
-  ],
+  "posts": [],
   "latestUpdates": {
     "read": [
       "Why We Sleep by Matthew Walker",
