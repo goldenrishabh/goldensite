@@ -265,6 +265,13 @@ class AdminPanel {
         if (tabName === 'files') {
             this.loadFileList();
         }
+        
+        // Render latest updates when switching to content tab
+        if (tabName === 'content') {
+            setTimeout(() => {
+                this.renderLatestUpdates();
+            }, 50);
+        }
     }
 
     async loadData() {
@@ -295,10 +302,16 @@ class AdminPanel {
         const headers = {
             'Authorization': `token ${this.githubToken}`,
             'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
         };
 
-        const options = { method, headers };
+        const options = { 
+            method, 
+            headers,
+            cache: 'no-store' // Prevent caching
+        };
         if (body) {
             options.body = JSON.stringify(body);
         }
@@ -357,12 +370,20 @@ class AdminPanel {
 
     async deleteFileFromGitHub(path, message) {
         const file = await this.getFileFromGitHub(path);
-        if (!file) return;
+        if (!file) {
+            console.warn(`File ${path} not found, may already be deleted`);
+            return;
+        }
 
-        return this.githubRequest(`/repos/${this.githubRepo}/contents/${path}`, 'DELETE', {
+        console.log(`🗑️ Deleting file: ${path} with SHA: ${file.sha}`);
+        
+        const result = await this.githubRequest(`/repos/${this.githubRepo}/contents/${path}`, 'DELETE', {
             message,
             sha: file.sha
         });
+        
+        console.log(`✅ GitHub confirmed deletion of: ${path}`);
+        return result;
     }
 
     async loadBlogData() {
@@ -409,7 +430,11 @@ class AdminPanel {
             this.autoDetectMissingCategories();
 
             this.renderPostsList();
-            this.renderLatestUpdates();
+            
+            // Render latest updates with a small delay to ensure DOM is ready
+            setTimeout(() => {
+                this.renderLatestUpdates();
+            }, 100);
         } catch (error) {
             console.error('Failed to load blog data:', error);
             // Initialize with empty data if blog-index.json doesn't exist
@@ -417,7 +442,11 @@ class AdminPanel {
             this.posts = [];
             this.latestUpdates = { read: [], watched: [], building: [] };
             this.renderPostsList();
-            this.renderLatestUpdates();
+            
+            // Render latest updates with a small delay to ensure DOM is ready
+            setTimeout(() => {
+                this.renderLatestUpdates();
+            }, 100);
         }
     }
 
@@ -471,8 +500,10 @@ class AdminPanel {
                 }
             }
         } catch (error) {
-            // If admin-drafts folder doesn't exist, that's fine
-            if (!error.message.includes('404')) {
+            // If admin-drafts folder doesn't exist, that's fine - just log it quietly
+            if (error.message.includes('404')) {
+                console.log('💡 admin-drafts folder does not exist yet. It will be created when you save your first draft.');
+            } else {
                 console.warn('Error loading drafts:', error);
             }
         }
@@ -1784,9 +1815,13 @@ class AdminPanel {
         
         categories.forEach(category => {
             const container = document.getElementById(`latest-${category}-list`);
-            if (!container) return;
+            if (!container) {
+                console.warn(`Container not found: latest-${category}-list - make sure you're on the Content tab`);
+                return;
+            }
             
             const items = this.latestUpdates[category] || [];
+            
             container.innerHTML = items.map((item, index) => `
                 <div class="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 rounded">
                     <span class="text-sm">${this.escapeHtml(item)}</span>
@@ -1906,6 +1941,9 @@ class AdminPanel {
             if (status === 'draft') {
                 filePath = `admin-drafts/${postData.category}/${postData.id}.txt`;
                 commitMessage = `Auto-save draft: ${postData.title}`;
+                
+                // For drafts, ensure the admin-drafts directory structure exists
+                await this.ensureAdminDraftsDirectory(postData.category);
             } else {
                 filePath = `static-blog/${postData.category}/${postData.id}.txt`;
                 commitMessage = `Auto-publish post: ${postData.title}`;
@@ -1930,6 +1968,42 @@ class AdminPanel {
         }
     }
 
+    async ensureAdminDraftsDirectory(category) {
+        try {
+            // Check if admin-drafts directory exists
+            await this.githubRequest(`/repos/${this.githubRepo}/contents/admin-drafts`);
+        } catch (error) {
+            if (error.message.includes('404')) {
+                // Create admin-drafts directory with a README
+                console.log('Creating admin-drafts directory...');
+                const readmeContent = `# Admin Drafts\n\nThis directory contains draft blog posts that are not yet published.\nDrafts in this directory are private and won't appear on the public website.\n\n## Structure\n\nEach category has its own subdirectory:\n- technical/\n- personal/\n- etc.\n\nDrafts are stored as .txt files with frontmatter and markdown content.`;
+                
+                await this.createOrUpdateFileInGitHub(
+                    'admin-drafts/README.md',
+                    readmeContent,
+                    'Initialize admin-drafts directory for private drafts'
+                );
+            }
+        }
+
+        try {
+            // Check if category directory exists in admin-drafts
+            await this.githubRequest(`/repos/${this.githubRepo}/contents/admin-drafts/${category}`);
+        } catch (error) {
+            if (error.message.includes('404')) {
+                // Create category directory with a placeholder
+                console.log(`Creating admin-drafts/${category} directory...`);
+                const placeholderContent = `# ${category} Drafts\n\nThis directory contains draft posts for the ${category} category.`;
+                
+                await this.createOrUpdateFileInGitHub(
+                    `admin-drafts/${category}/.gitkeep`,
+                    placeholderContent,
+                    `Create admin-drafts/${category} directory`
+                );
+            }
+        }
+    }
+
     async deleteFile(filePath, fileName, sha) {
         if (!confirm(`Are you sure you want to delete "${fileName}"?\n\nThis action cannot be undone.`)) {
             return;
@@ -1943,12 +2017,17 @@ class AdminPanel {
         try {
             this.showSyncStatus('syncing');
             
+            // Delete the file from GitHub
             await this.deleteFileFromGitHub(filePath, `Delete image: ${fileName}`);
             
-            // Reload file list to reflect changes
+            // Wait a moment for GitHub to process the deletion
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Force reload file list with cache busting
             await this.loadFileList();
             
             this.showSyncStatus('synced');
+            console.log(`✅ File "${fileName}" deleted successfully from GitHub`);
             alert(`✅ File "${fileName}" deleted successfully!`);
             
         } catch (error) {
