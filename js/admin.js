@@ -52,9 +52,23 @@ class AdminPanel {
             this.closePostEditor();
         });
 
-        document.getElementById('save-post').addEventListener('click', () => {
-            this.savePost();
-        });
+        // Save post buttons
+        setTimeout(() => {
+            const saveDraftBtn = document.getElementById('save-draft');
+            const savePublishBtn = document.getElementById('save-publish');
+            
+            if (saveDraftBtn) {
+                saveDraftBtn.addEventListener('click', () => {
+                    this.savePost('draft');
+                });
+            }
+            
+            if (savePublishBtn) {
+                savePublishBtn.addEventListener('click', () => {
+                    this.savePost('published');
+                });
+            }
+        }, 100);
 
         document.getElementById('delete-post').addEventListener('click', () => {
             this.deletePost();
@@ -132,6 +146,17 @@ class AdminPanel {
 
         // Category change handler - will be attached to select element after it's created
         this.setupCategoryChangeListener();
+        
+        // Status filter buttons
+        setTimeout(() => {
+            const filterAll = document.getElementById('filter-all');
+            const filterPublished = document.getElementById('filter-published');
+            const filterDraft = document.getElementById('filter-draft');
+            
+            if (filterAll) filterAll.addEventListener('click', () => this.filterPostsByStatus('all'));
+            if (filterPublished) filterPublished.addEventListener('click', () => this.filterPostsByStatus('published'));
+            if (filterDraft) filterDraft.addEventListener('click', () => this.filterPostsByStatus('draft'));
+        }, 100);
     }
 
     setupCategoryChangeListener() {
@@ -584,25 +609,53 @@ class AdminPanel {
     renderPostsList() {
         const container = document.getElementById('posts-list');
         
-        container.innerHTML = this.posts.map(post => `
-            <tr>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">${post.title || post.id}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-${this.getCategoryColor(post.category)}-100 text-${this.getCategoryColor(post.category)}-800">
-                        ${this.categories[post.category]?.name || post.category}
-                    </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    ${post.date || 'No date'}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button onclick="adminPanel.editPost('${post.id}')" class="text-cream-600 hover:text-cream-900 mr-4">Edit</button>
-                    <button onclick="adminPanel.deletePostConfirm('${post.id}')" class="text-red-600 hover:text-red-900">Delete</button>
-                </td>
-            </tr>
-        `).join('');
+        // Update post counts
+        const totalPosts = this.posts.length;
+        const publishedPosts = this.posts.filter(post => (post.status || 'published') === 'published').length;
+        const draftPosts = this.posts.filter(post => (post.status || 'published') === 'draft').length;
+        
+        const totalCountEl = document.getElementById('total-posts-count');
+        const publishedCountEl = document.getElementById('published-posts-count');
+        const draftCountEl = document.getElementById('draft-posts-count');
+        
+        if (totalCountEl) totalCountEl.textContent = totalPosts;
+        if (publishedCountEl) publishedCountEl.textContent = publishedPosts;
+        if (draftCountEl) draftCountEl.textContent = draftPosts;
+        
+        container.innerHTML = this.posts.map(post => {
+            const status = post.status || 'published'; // Default to published for existing posts
+            const statusBadge = status === 'draft' 
+                ? '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 ml-2">📝 Draft</span>'
+                : '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 ml-2">🌐 Published</span>';
+            
+            const toggleAction = status === 'draft'
+                ? `<button onclick="adminPanel.publishPost('${post.id}')" class="text-green-600 hover:text-green-900 mr-4">Publish</button>`
+                : `<button onclick="adminPanel.unpublishPost('${post.id}')" class="text-yellow-600 hover:text-yellow-900 mr-4">Unpublish</button>`;
+            
+            return `
+                <tr class="${status === 'draft' ? 'bg-yellow-50 dark:bg-yellow-900/10' : ''}">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            ${post.title || post.id}
+                            ${statusBadge}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-${this.getCategoryColor(post.category)}-100 text-${this.getCategoryColor(post.category)}-800">
+                            ${this.categories[post.category]?.name || post.category}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        ${post.date || 'No date'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        ${toggleAction}
+                        <button onclick="adminPanel.editPost('${post.id}')" class="text-cream-600 hover:text-cream-900 mr-4">Edit</button>
+                        <button onclick="adminPanel.deletePostConfirm('${post.id}')" class="text-red-600 hover:text-red-900">Delete</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     getCategoryColor(category) {
@@ -820,10 +873,11 @@ class AdminPanel {
         }
 
         try {
-            // Generate updated blog-index.json
+            // Generate updated blog-index.json - only include published posts for public site
+            const publishedPosts = this.posts.filter(post => (post.status || 'published') === 'published');
             const blogIndex = {
                 categories: this.categories,
-                posts: this.posts.map(post => ({
+                posts: publishedPosts.map(post => ({
                     id: post.id,
                     category: post.category,
                     file: post.file
@@ -867,6 +921,7 @@ class AdminPanel {
             document.getElementById('post-date').value = post.date || '';
             document.getElementById('post-tags').value = Array.isArray(post.tags) ? post.tags.join(', ') : (post.tags || '');
             document.getElementById('post-read-time').value = post.readTime || '';
+            document.getElementById('post-status').value = post.status || 'published';
             
             if (this.markdownEditor) {
                 this.markdownEditor.value(post.content || '');
@@ -891,6 +946,7 @@ class AdminPanel {
             document.getElementById('post-date').value = new Date().toISOString().split('T')[0]; // Default to today
             document.getElementById('post-tags').value = '';
             document.getElementById('post-read-time').value = '';
+            document.getElementById('post-status').value = 'draft'; // Default new posts to draft
             
             if (this.markdownEditor) {
                 this.markdownEditor.value('');
@@ -907,13 +963,19 @@ class AdminPanel {
         this.currentEditingPost = null;
     }
 
-    async savePost() {
+    async savePost(forcedStatus = null) {
         const title = document.getElementById('post-title').value;
         let category = document.getElementById('post-category').value;
         const excerpt = document.getElementById('post-excerpt').value;
         const date = document.getElementById('post-date').value;
         const tags = document.getElementById('post-tags').value;
+        const status = forcedStatus || document.getElementById('post-status').value;
         const content = this.markdownEditor ? this.markdownEditor.value() : document.getElementById('post-content').value;
+        
+        // Update the status dropdown to reflect the forced status
+        if (forcedStatus) {
+            document.getElementById('post-status').value = forcedStatus;
+        }
         
         // Auto-calculate reading time if not manually set
         let readTime = document.getElementById('post-read-time').value;
@@ -961,6 +1023,7 @@ class AdminPanel {
             category,
             date: finalDate,
             readTime,
+            status,
             tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag)
         };
 
@@ -993,7 +1056,11 @@ class AdminPanel {
             this.renderCategoriesList(); // Update categories list to show new post counts
             this.closePostEditor();
             
-            alert('Post saved and blog index updated!');
+            if (status === 'draft') {
+                alert('📝 Post saved as draft!\n\nThe post is saved but won\'t appear on your public website until you publish it.');
+            } else {
+                alert('🌐 Post published successfully!\n\nYour post is now live on your website!');
+            }
         } catch (error) {
             console.error('Failed to save post:', error);
             alert('Failed to save post. Please try again.');
@@ -1080,6 +1147,92 @@ class AdminPanel {
         }
         
         alert('Post deleted and blog index updated!');
+    }
+
+    async publishPost(postId) {
+        const post = this.posts.find(p => p.id === postId);
+        if (!post) return;
+
+        post.status = 'published';
+        
+        // Update blog-index.json immediately
+        await this.updateBlogIndexFile();
+        
+        this.renderPostsList();
+        alert('Post published successfully!');
+    }
+
+    async unpublishPost(postId) {
+        const post = this.posts.find(p => p.id === postId);
+        if (!post) return;
+
+        post.status = 'draft';
+        
+        // Update blog-index.json immediately
+        await this.updateBlogIndexFile();
+        
+        this.renderPostsList();
+        alert('Post moved to draft!');
+    }
+
+    filterPostsByStatus(status) {
+        // Update active filter button
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`[data-filter="${status}"]`).classList.add('active');
+        
+        // Update post counts (always show total counts, not filtered)
+        const totalPosts = this.posts.length;
+        const publishedPosts = this.posts.filter(post => (post.status || 'published') === 'published').length;
+        const draftPosts = this.posts.filter(post => (post.status || 'published') === 'draft').length;
+        
+        const totalCountEl = document.getElementById('total-posts-count');
+        const publishedCountEl = document.getElementById('published-posts-count');
+        const draftCountEl = document.getElementById('draft-posts-count');
+        
+        if (totalCountEl) totalCountEl.textContent = totalPosts;
+        if (publishedCountEl) publishedCountEl.textContent = publishedPosts;
+        if (draftCountEl) draftCountEl.textContent = draftPosts;
+        
+        // Filter and render posts
+        const filteredPosts = status === 'all' 
+            ? this.posts 
+            : this.posts.filter(post => (post.status || 'published') === status);
+        
+        const container = document.getElementById('posts-list');
+        container.innerHTML = filteredPosts.map(post => {
+            const postStatus = post.status || 'published';
+            const statusBadge = postStatus === 'draft' 
+                ? '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 ml-2">📝 Draft</span>'
+                : '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 ml-2">🌐 Published</span>';
+            
+            const toggleAction = postStatus === 'draft'
+                ? `<button onclick="adminPanel.publishPost('${post.id}')" class="text-green-600 hover:text-green-900 mr-4">Publish</button>`
+                : `<button onclick="adminPanel.unpublishPost('${post.id}')" class="text-yellow-600 hover:text-yellow-900 mr-4">Unpublish</button>`;
+            
+            return `
+                <tr class="${postStatus === 'draft' ? 'bg-yellow-50 dark:bg-yellow-900/10' : ''}">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            ${post.title || post.id}
+                            ${statusBadge}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-${this.getCategoryColor(post.category)}-100 text-${this.getCategoryColor(post.category)}-800">
+                            ${this.categories[post.category]?.name || post.category}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        ${post.date || 'No date'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        ${toggleAction}
+                        <button onclick="adminPanel.editPost('${post.id}')" class="text-cream-600 hover:text-cream-900 mr-4">Edit</button>
+                        <button onclick="adminPanel.deletePostConfirm('${post.id}')" class="text-red-600 hover:text-red-900">Delete</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     initializeMarkdownEditor() {
@@ -1275,10 +1428,11 @@ class AdminPanel {
                 }
             }
 
-            // Generate new blog-index.json
+            // Generate new blog-index.json - only include published posts for public site
+            const publishedPosts = this.posts.filter(post => (post.status || 'published') === 'published');
             const blogIndex = {
                 categories: this.categories,
-                posts: this.posts.map(post => ({
+                posts: publishedPosts.map(post => ({
                     id: post.id,
                     category: post.category,
                     file: post.file
@@ -1329,11 +1483,11 @@ class AdminPanel {
                 }
             }
 
-            // Sync all posts that have been modified
+            // Sync only published posts that have been modified
             let syncedPosts = 0;
             let failedPosts = 0;
             
-            for (const post of this.posts) {
+            for (const post of publishedPosts) {
                 const postContent = localStorage.getItem(`post-${post.id}`);
                 if (postContent) {
                     try {
@@ -1359,12 +1513,18 @@ class AdminPanel {
             // Show success message with details
             let message = 'Successfully synced with GitHub!';
             if (syncedPosts > 0) {
-                message += `\n\n📝 ${syncedPosts} post(s) synced`;
+                message += `\n\n📝 ${syncedPosts} published post(s) synced`;
             }
             if (failedPosts > 0) {
                 message += `\n⚠️ ${failedPosts} post(s) failed to sync`;
             }
-            message += '\n\n🚀 Changes are now live on your website!';
+            
+            const draftCount = this.posts.filter(post => (post.status || 'published') === 'draft').length;
+            if (draftCount > 0) {
+                message += `\n\n📝 ${draftCount} draft post(s) kept private (not synced)`;
+            }
+            
+            message += '\n\n🚀 Published content is now live on your website!';
             
             alert(message);
             

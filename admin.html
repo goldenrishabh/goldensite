@@ -56,16 +56,41 @@
             @apply px-4 py-2 rounded-md font-medium transition-colors;
         }
         
+        .admin-btn:hover {
+            @apply transform scale-105;
+        }
+        
         .admin-btn-primary {
-            @apply bg-cream-600 text-white hover:bg-cream-700;
+            @apply bg-cream-600 text-white;
+        }
+        
+        .admin-btn-primary:hover {
+            @apply bg-cream-700;
         }
         
         .admin-btn-secondary {
-            @apply bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600;
+            @apply bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300;
+        }
+        
+        .admin-btn-secondary:hover {
+            @apply bg-gray-300 dark:bg-gray-600;
         }
         
         .admin-btn-danger {
-            @apply bg-red-600 text-white hover:bg-red-700;
+            @apply bg-red-600 text-white;
+        }
+        
+        .admin-btn-danger:hover {
+            @apply bg-red-700;
+        }
+        
+        /* Filter button styles */
+        .filter-btn.active {
+            @apply bg-cream-600 text-white;
+        }
+        
+        .filter-btn.active:hover {
+            @apply bg-cream-700;
         }
         
         .admin-input {
@@ -155,8 +180,37 @@
                     </button>
                 </div>
 
+                <!-- Posts Summary -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="admin-card">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-gray-700 dark:text-gray-300" id="total-posts-count">0</div>
+                            <div class="text-sm text-gray-500">Total Posts</div>
+                        </div>
+                    </div>
+                    <div class="admin-card">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-green-600" id="published-posts-count">0</div>
+                            <div class="text-sm text-gray-500">🌐 Published</div>
+                        </div>
+                    </div>
+                    <div class="admin-card">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-yellow-600" id="draft-posts-count">0</div>
+                            <div class="text-sm text-gray-500">📝 Drafts</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Posts List -->
                 <div class="admin-card">
+                    <!-- Status Filter Buttons -->
+                    <div class="mb-4 flex space-x-2">
+                        <button id="filter-all" class="admin-btn admin-btn-secondary filter-btn active" data-filter="all">All Posts</button>
+                        <button id="filter-published" class="admin-btn admin-btn-secondary filter-btn" data-filter="published">🌐 Published</button>
+                        <button id="filter-draft" class="admin-btn admin-btn-secondary filter-btn" data-filter="draft">📝 Drafts</button>
+                    </div>
+                    
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-800">
@@ -389,6 +443,15 @@
                             <input type="text" id="post-read-time" class="admin-input" placeholder="Auto-calculated from content">
                             <p class="text-xs text-gray-500 mt-1">Leave empty to auto-calculate based on word count</p>
                         </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Status</label>
+                            <select id="post-status" class="admin-select">
+                                <option value="draft">📝 Draft</option>
+                                <option value="published">🌐 Published</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">Draft posts won't appear on the public website</p>
+                        </div>
                     </div>
                     
                     <!-- Markdown Editor -->
@@ -398,10 +461,13 @@
                     </div>
                 </div>
                 
-                <div class="flex justify-end space-x-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <button id="delete-post" class="admin-btn admin-btn-danger hidden">Delete Post</button>
-                    <button id="cancel-edit" class="admin-btn admin-btn-secondary">Cancel</button>
-                    <button id="save-post" class="admin-btn admin-btn-primary">Save Post</button>
+                    <div class="flex space-x-2">
+                        <button id="cancel-edit" class="admin-btn admin-btn-secondary">Cancel</button>
+                        <button id="save-draft" class="admin-btn admin-btn-secondary">📝 Save Draft</button>
+                        <button id="save-publish" class="admin-btn admin-btn-primary">🌐 Save & Publish</button>
+                    </div>
                 </div>
             </div>
         </div>
