@@ -2,15 +2,15 @@
   "categories": {
     "business": {
       "name": "Business",
-      "description": "Startup insights, product strategy, and business philosophy",
-      "color": "green"
+      "description": "Posts about business",
+      "color": "gray"
     }
   },
   "posts": [
     {
-      "id": "to-make-a-scalable-product-make-for-a-difficult-niche",
+      "id": "blog1",
       "category": "business",
-      "file": "static-blog/business/to-make-a-scalable-product-make-for-a-difficult-niche.txt"
+      "file": "static-blog/business/blog1.txt"
     }
   ]
 }

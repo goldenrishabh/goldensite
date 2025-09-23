@@ -1,0 +1,198 @@
+#!/usr/bin/env node
+
+// Simple Blog CLI
+// Commands:
+//   blog generate  - Process raw/*.md into blog/<category>/*.md, compute read time, rebuild index
+//   blog publish   - Commit and push changes to GitHub
+
+const fs = require('fs');
+const path = require('path');
+const { spawnSync } = require('child_process');
+
+const ROOT_DIR = process.cwd();
+const RAW_DIR = path.join(ROOT_DIR, 'raw');
+const BLOG_DIR = path.join(ROOT_DIR, 'blog');
+
+// Reuse existing index generator if available
+let generateBlogIndex;
+try {
+  ({ generateBlogIndex } = require(path.join(ROOT_DIR, 'generate-blog-index.js')));
+} catch (err) {
+  // noop; handle later if missing
+}
+
+function exitWithError(message) {
+  console.error(`\n❌ ${message}`);
+  process.exit(1);
+}
+
+function ensureDir(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+}
+
+function parseFrontmatter(markdown) {
+  const frontmatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
+  const match = markdown.match(frontmatterRegex);
+  if (!match) return { frontmatter: {}, content: markdown, hasFrontmatter: false };
+
+  const frontmatterText = match[1];
+  const content = match[2];
+  const frontmatter = {};
+
+  frontmatterText.split('\n').forEach(line => {
+    const colonIndex = line.indexOf(':');
+    if (colonIndex > 0) {
+      const key = line.substring(0, colonIndex).trim();
+      let value = line.substring(colonIndex + 1).trim();
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith('\'') && value.endsWith('\''))) {
+        value = value.slice(1, -1);
+      }
+      if (value.startsWith('[') && value.endsWith(']')) {
+        value = value.slice(1, -1).split(',').map(item => item.trim().replace(/["']/g, ''));
+      }
+      frontmatter[key] = value;
+    }
+  });
+
+  return { frontmatter, content, hasFrontmatter: true };
+}
+
+function stringifyFrontmatter(frontmatter) {
+  const lines = Object.entries(frontmatter).map(([key, value]) => {
+    if (Array.isArray(value)) {
+      const arr = `[${value.map(v => typeof v === 'string' ? `'${v.replace(/'/g, "\\'")}'` : v).join(', ')}]`;
+      return `${key}: ${arr}`;
+    }
+    if (value === undefined || value === null) return `${key}:`;
+    if (typeof value === 'string') {
+      const needsQuotes = /[#:>\[\]\{\},]|^\s|\s$/.test(value) || value.includes(' ');
+      return `${key}: ${needsQuotes ? '"' + value.replace(/"/g, '\\"') + '"' : value}`;
+    }
+    return `${key}: ${value}`;
+  });
+  return `---\n${lines.join('\n')}\n---\n`;
+}
+
+function calculateReadingTime(markdownContent) {
+  const plainText = markdownContent
+    .replace(/^---[\s\S]*?\n---\n/m, '') // remove frontmatter
+    .replace(/#{1,6}\s/g, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+    .replace(/!\[([^\]]*)\]\([^\)]+\)/g, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\n/g, ' ')
+    .trim();
+
+  const words = plainText.split(/\s+/).filter(Boolean);
+  const wordCount = words.length;
+  const minutes = Math.ceil(wordCount / 225);
+  if (minutes < 1) return 'Quick read';
+  if (minutes === 1) return '1 min read';
+  return `${minutes} min read`;
+}
+
+function slugify(filename) {
+  return filename
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function generate() {
+  console.log('🛠  Generating blog content from raw/*.md ...');
+  if (!fs.existsSync(RAW_DIR)) exitWithError('raw directory does not exist');
+
+  ensureDir(BLOG_DIR);
+
+  const files = fs.readdirSync(RAW_DIR).filter(f => f.endsWith('.md'));
+  if (files.length === 0) {
+    console.log('ℹ️  No markdown files found in raw/. Nothing to do.');
+  }
+
+  files.forEach(file => {
+    const rawPath = path.join(RAW_DIR, file);
+    const source = fs.readFileSync(rawPath, 'utf8');
+    const { frontmatter, content } = parseFrontmatter(source);
+
+    const category = (frontmatter.category || 'random').toString().toLowerCase();
+    const title = frontmatter.title || path.basename(file, '.md');
+    const id = slugify(path.basename(file, '.md'));
+
+    const categoryDir = path.join(BLOG_DIR, category);
+    ensureDir(categoryDir);
+
+    const computedReadTime = calculateReadingTime(content);
+    if (!frontmatter.readTime || (typeof frontmatter.readTime === 'string' && frontmatter.readTime.trim() === '')) {
+      frontmatter.readTime = computedReadTime;
+    }
+
+    if (!frontmatter.title) frontmatter.title = title;
+    if (!frontmatter.date) frontmatter.date = new Date().toISOString().split('T')[0];
+
+    const outputPath = path.join(categoryDir, `${id}.md`);
+    const output = `${stringifyFrontmatter(frontmatter)}\n${content.trim()}\n`;
+    fs.writeFileSync(outputPath, output);
+    console.log(`  ✓ ${file} -> blog/${category}/${id}.md (${frontmatter.readTime})`);
+  });
+
+  if (typeof generateBlogIndex === 'function') {
+    console.log('\n📚 Rebuilding blog index and static files...');
+    generateBlogIndex();
+  } else {
+    console.warn('⚠️  Could not find generate-blog-index.js to rebuild index. Skipping.');
+  }
+
+  console.log('\n✅ Generation complete.');
+}
+
+function hasUncommittedChanges() {
+  const diff = spawnSync('git', ['diff', '--quiet']);
+  const cached = spawnSync('git', ['diff', '--cached', '--quiet']);
+  return diff.status !== 0 || cached.status !== 0;
+}
+
+function publish() {
+  console.log('🚀 Publishing to GitHub...');
+
+  // Stage everything
+  let res = spawnSync('git', ['add', '-A'], { stdio: 'inherit' });
+  if (res.status !== 0) exitWithError('git add failed');
+
+  if (!hasUncommittedChanges()) {
+    console.log('ℹ️  No changes to publish.');
+    return;
+  }
+
+  res = spawnSync('git', ['commit', '-m', 'Publish blog updates'], { stdio: 'inherit' });
+  if (res.status !== 0) exitWithError('git commit failed');
+
+  res = spawnSync('git', ['push'], { stdio: 'inherit' });
+  if (res.status !== 0) exitWithError('git push failed');
+
+  console.log('✅ Publish complete.');
+}
+
+function main() {
+  const [, , command] = process.argv;
+  if (!command || command === 'help' || command === '--help' || command === '-h') {
+    console.log('Usage: blog <command>');
+    console.log('Commands:');
+    console.log('  generate   Build blog from raw/*.md and rebuild index');
+    console.log('  publish    Commit and push changes to GitHub');
+    process.exit(0);
+  }
+
+  if (command === 'generate') return generate();
+  if (command === 'publish') return publish();
+  exitWithError(`Unknown command: ${command}`);
+}
+
+main();
+
+
