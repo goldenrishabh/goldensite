@@ -7,6 +7,8 @@ class PersonalWebsite {
         this.categories = {};
         this.latestUpdates = null;
         this.isDarkMode = false;
+        this.viewMode = 'grid';
+        this.searchQuery = '';
         
         this.init();
     }
@@ -118,12 +120,31 @@ class PersonalWebsite {
                 
                 // Filter out failed loads
                 this.blogPosts = loadedPosts.filter(post => post !== null);
-                
-                // Sort by date (newest first)
-                this.blogPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
             } else {
                 this.blogPosts = [];
             }
+            
+            // Inject external Blogger posts
+            const bloggerPosts = [
+                { id: 'blogger-uncle-of-mountains', title: 'The Northern Land', date: '2024-12-31', category: 'adventure', url: 'https://goldenrishabh.blogspot.com/2024/12/the-uncle-of-mountains.html', tags: ['Travel'], readTime: '8 min' },
+                { id: 'blogger-forty-rules-of-love', title: 'The Forty Rules of Love', date: '2024-12-01', category: 'reviews', url: 'https://goldenrishabh.blogspot.com/2024/12/the-forty-rules-of-love.html', tags: ['Book Review'], readTime: '5 min' },
+                { id: 'blogger-1984', title: 'Big Brother is Watching You', date: '2024-12-01', category: 'reviews', url: 'https://goldenrishabh.blogspot.com/2024/12/big-brother-is-watching-you.html', tags: ['Book Review'], readTime: '4 min' },
+                { id: 'blogger-ps5-now', title: 'Do you really need that PS5 now?', date: '2024-12-01', category: 'personal', url: 'https://goldenrishabh.blogspot.com/2024/12/do-you-really-need-that-ps5-now.html', tags: ['Money'], readTime: '4 min' },
+                { id: 'blogger-surrounded-by-idiots', title: 'He/She does not make any sense!', date: '2024-11-30', category: 'reviews', url: 'https://goldenrishabh.blogspot.com/2024/11/heshe-does-not-make-any-sense.html', tags: ['Book Review'], readTime: '4 min' },
+                { id: 'blogger-monk-sold-ferrari', title: 'Should you sell your Ferrari?', date: '2024-11-30', category: 'reviews', url: 'https://goldenrishabh.blogspot.com/2024/11/should-you-sell-your-ferrari.html', tags: ['Book Summary'], readTime: '6 min' },
+                { id: 'blogger-breath', title: 'Just Breathe...', date: '2024-11-30', category: 'reviews', url: 'https://goldenrishabh.blogspot.com/2024/11/just-breathe.html', tags: ['Book Summary'], readTime: '5 min' },
+                { id: 'blogger-aunts-cousins', title: 'India, Aunts and Cousins', date: '2024-07-01', category: 'adventure', url: 'https://goldenrishabh.blogspot.com/2024/07/india-aunts-and-cousins.html', tags: ['Travel'], readTime: '4 min' },
+                { id: 'blogger-kerala', title: 'The Authentic Kerala Experience', date: '2024-04-01', category: 'adventure', url: 'https://goldenrishabh.blogspot.com/2024/04/the-authentic-kerela-experience.html', tags: ['Travel'], readTime: '4 min' },
+                { id: 'blogger-one-thought', title: 'The Power of One Thought', date: '2024-03-01', category: 'philosophical', url: 'https://goldenrishabh.blogspot.com/2024/03/the-power-of-one-thought.html', tags: ['Mindset'], readTime: '3 min' },
+                { id: 'blogger-being-alone', title: 'The Art of Being Alone', date: '2024-03-01', category: 'philosophical', url: 'https://goldenrishabh.blogspot.com/2024/03/the-art-of-being-alone.html', tags: ['Mindset'], readTime: '3 min' },
+                { id: 'blogger-the-secret', title: 'The Secret', date: '2024-02-01', category: 'philosophical', url: 'https://goldenrishabh.blogspot.com/2024/02/the-secret.html', tags: ['Mindset'], readTime: '3 min' },
+                { id: 'blogger-vintage-car', title: 'Discovery of Vintage Car', date: '2020-11-01', category: 'personal', url: 'https://goldenrishabh.blogspot.com/2020/11/discovery-of-vintage-car.html', tags: ['Story'], readTime: '3 min' },
+                { id: 'blogger-ready-player-one', title: 'Ready Player One', date: '2020-11-01', category: 'reviews', url: 'https://goldenrishabh.blogspot.com/2020/11/ready-player-one.html', tags: ['Book Review'], readTime: '3 min' }
+            ].map(p => ({ ...p, content: '', excerpt: '', isExternal: true }));
+
+            this.blogPosts = [...this.blogPosts, ...bloggerPosts];
+            // Sort by date (newest first)
+            this.blogPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
             
             // Update UI
             this.updateCategoryButtons();
@@ -400,9 +421,19 @@ class PersonalWebsite {
     
     renderBlogPosts(category = 'all') {
         const container = document.getElementById('blog-posts');
-        const filteredPosts = category === 'all' 
+        let filteredPosts = category === 'all' 
             ? this.blogPosts 
             : this.blogPosts.filter(post => post.category === category);
+        
+        // Apply search filter
+        const q = this.searchQuery.trim().toLowerCase();
+        if (q) {
+            filteredPosts = filteredPosts.filter(p =>
+                (p.title && p.title.toLowerCase().includes(q)) ||
+                (p.excerpt && p.excerpt.toLowerCase().includes(q)) ||
+                (p.tags && p.tags.join(' ').toLowerCase().includes(q))
+            );
+        }
         
         console.log(`Rendering ${filteredPosts.length} posts for category: ${category}`);
         
@@ -413,50 +444,61 @@ class PersonalWebsite {
         
         this.hideEmptyState();
         
-        container.innerHTML = filteredPosts.map(post => `
-            <article class="blog-post-card group cursor-pointer" data-post-id="${post.id}">
-                <div class="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-cream-200 dark:border-cream-600 overflow-hidden hover:shadow-xl transition-all duration-300 group-hover:scale-105">
-                    <div class="p-6">
-                        <div class="flex items-center justify-between mb-4">
+        if (this.viewMode === 'list') {
+            container.className = 'grid grid-cols-1 gap-4';
+            container.innerHTML = filteredPosts.map(post => `
+                <article class="blog-post-card group cursor-pointer" data-post-id="${post.id}">
+                    <div class="bg-white dark:bg-[#1a1a1a] rounded-xl border border-cream-200 dark:border-cream-600 p-4 hover:shadow-md transition">
+                        <div class="flex items-center gap-3">
                             <span class="category-badge category-${post.category}">${this.getCategoryName(post.category)}</span>
-                            <span class="text-sm text-gray-500 dark:text-cream-400">${post.readTime || 'Quick read'}</span>
+                            <h3 class="font-bold group-hover:text-cream-600 dark:group-hover:text-cream-400">${post.title}</h3>
+                            <span class="ml-auto text-sm text-gray-500 dark:text-cream-400">${this.formatDate(post.date)}</span>
                         </div>
-                        
-                        <h3 class="text-xl font-bold mb-3 group-hover:text-cream-600 dark:group-hover:text-cream-400 transition-colors">
-                            ${post.title}
-                        </h3>
-                        
-                        <p class="text-gray-600 dark:text-cream-300 mb-4 leading-relaxed">
-                            ${post.excerpt || this.generateExcerpt(post.content)}
-                        </p>
-                        
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-500 dark:text-cream-400">
-                                ${this.formatDate(post.date)}
-                            </span>
-                            <div class="flex flex-wrap gap-2">
-                                ${(post.tags || []).slice(0, 2).map(tag => `
-                                    <span class="text-xs px-2 py-1 bg-cream-100 dark:bg-[#1a1a1a] text-cream-700 dark:text-cream-400 rounded-full dark:border dark:border-cream-600">
-                                        ${tag}
-                                    </span>
-                                `).join('')}
+                        <div class="mt-2 text-sm text-gray-600 dark:text-cream-300">${post.excerpt || this.generateExcerpt(post.content)}</div>
+                    </div>
+                </article>
+            `).join('');
+        } else {
+            container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8';
+            container.innerHTML = filteredPosts.map(post => `
+                <article class="blog-post-card group cursor-pointer" data-post-id="${post.id}">
+                    <div class="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-cream-200 dark:border-cream-600 overflow-hidden hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="category-badge category-${post.category}">${this.getCategoryName(post.category)}</span>
+                                <span class="text-sm text-gray-500 dark:text-cream-400">${post.readTime || 'Quick read'}</span>
+                            </div>
+                            
+                            <h3 class="text-xl font-bold mb-3 group-hover:text-cream-600 dark:group-hover:text-cream-400 transition-colors">
+                                ${post.title}
+                            </h3>
+                            
+                            <p class="text-gray-600 dark:text-cream-300 mb-4 leading-relaxed">
+                                ${post.excerpt || this.generateExcerpt(post.content)}
+                            </p>
+                            
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500 dark:text-cream-400">
+                                    ${this.formatDate(post.date)}
+                                </span>
+                                <div class="flex flex-wrap gap-2">
+                                    ${(post.tags || []).slice(0, 2).map(tag => `
+                                        <span class="text-xs px-2 py-1 bg-cream-100 dark:bg-[#1a1a1a] text-cream-700 dark:text-cream-400 rounded-full dark:border dark:border-cream-600">
+                                            ${tag}
+                                        </span>
+                                    `).join('')}
+                                </div>
                             </div>
                         </div>
-                        
-                        <!-- Debug info -->
-                        <div class="mt-2 text-xs text-gray-400 opacity-50">
-                            Post ID: ${post.id} | Content length: ${post.content ? post.content.length : 0} chars
-                        </div>
                     </div>
-                </div>
-            </article>
-        `).join('');
+                </article>
+            `).join('');
+        }
         
         // Add click handlers for blog posts
         container.querySelectorAll('.blog-post-card').forEach(card => {
             card.addEventListener('click', () => {
                 const postId = card.dataset.postId;
-                console.log(`Clicked on post card with ID: ${postId}`);
                 this.openBlogPost(postId);
             });
         });
@@ -505,8 +547,12 @@ class PersonalWebsite {
             return;
         }
 
-        console.log('Opening post:', post.title);
-        
+        // If external, open in new tab
+        if (post.isExternal && post.url) {
+            window.open(post.url, '_blank', 'noopener');
+            return;
+        }
+
         // Navigate to the dedicated blog post page
         window.location.href = `blog-post.html?id=${postId}`;
     }
@@ -673,6 +719,30 @@ class PersonalWebsite {
             e.preventDefault();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
+
+        // Search input
+        const searchInput = document.getElementById('blog-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchQuery = e.target.value || '';
+                this.renderBlogPosts(this.currentCategory);
+            });
+        }
+
+        // View mode buttons
+        const viewGrid = document.getElementById('view-grid');
+        const viewList = document.getElementById('view-list');
+        const setActive = () => {
+            if (viewGrid && viewList) {
+                const activeClasses = ' bg-cream-600 dark:bg-cream-500 text-white border-cream-600 dark:border-cream-500';
+                const baseClasses = 'px-4 py-2 rounded-lg border border-cream-300 dark:border-cream-600 text-gray-700 dark:text-cream-300 hover:border-cream-500 dark:hover:border-cream-500 transition-colors';
+                viewGrid.className = baseClasses + (this.viewMode === 'grid' ? activeClasses : '');
+                viewList.className = baseClasses + (this.viewMode === 'list' ? activeClasses : '');
+            }
+        };
+        setActive();
+        if (viewGrid) viewGrid.addEventListener('click', () => { this.viewMode = 'grid'; setActive(); this.renderBlogPosts(this.currentCategory); });
+        if (viewList) viewList.addEventListener('click', () => { this.viewMode = 'list'; setActive(); this.renderBlogPosts(this.currentCategory); });
     }
     
     setupCategoryFilters() {

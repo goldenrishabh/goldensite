@@ -522,10 +522,16 @@
                 <p class="text-center text-gray-600 dark:text-cream-300 mb-12 max-w-2xl mx-auto">
                     A collection of my thoughts on technology, philosophy, books, adventures and the randomness of life.
                 </p>
-                
-                <!-- Recent Blog Posts from Blogger removed: using dynamic posts below -->
-                
-                
+                <!-- Blog Controls: Search + View Toggle -->
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+                    <div class="w-full md:w-1/2">
+                        <input id="blog-search" type="text" placeholder="Search posts..." class="w-full px-4 py-2 rounded-full border border-cream-300 dark:border-cream-600 bg-white dark:bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-cream-500" />
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="view-grid" class="px-4 py-2 rounded-lg border border-cream-300 dark:border-cream-600 text-gray-700 dark:text-cream-300 hover:border-cream-500 dark:hover:border-cream-500 transition-colors">Grid</button>
+                        <button id="view-list" class="px-4 py-2 rounded-lg border border-cream-300 dark:border-cream-600 text-gray-700 dark:text-cream-300 hover:border-cream-500 dark:hover:border-cream-500 transition-colors">List</button>
+                    </div>
+                </div>
                 
                 <!-- Blog Categories -->
                 <div id="blog-categories" class="flex flex-wrap justify-center gap-4 mb-12">
@@ -538,69 +544,6 @@
                     <!-- Blog posts will be loaded here dynamically -->
                 </div>
                 
-                <!-- Archive Section (Older Blogger Posts) -->
-                <div class="mt-20">
-                    <h3 class="text-2xl font-bold text-center mb-8 text-cream-600 dark:text-cream-400">Archive</h3>
-                    <div class="max-w-4xl mx-auto">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- 2024 Archive -->
-                            <div class="bg-white dark:bg-[#1a1a1a] p-6 rounded-xl border border-cream-200 dark:border-cream-600">
-                                <h4 class="font-bold text-lg mb-4 text-cream-600 dark:text-cream-400">2024</h4>
-                                <ul class="space-y-3">
-                                    <li>
-                                        <a href="https://goldenrishabh.blogspot.com/2024/07/india-aunts-and-cousins.html" target="_blank" rel="noopener" class="flex items-center justify-between hover:text-cream-600 dark:hover:text-cream-400 transition-colors">
-                                            <span class="text-sm">India, Aunts and Cousins</span>
-                                            <span class="text-xs text-gray-500 dark:text-cream-400">Jul 2024</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://goldenrishabh.blogspot.com/2024/04/the-authentic-kerela-experience.html" target="_blank" rel="noopener" class="flex items-center justify-between hover:text-cream-600 dark:hover:text-cream-400 transition-colors">
-                                            <span class="text-sm">The Authentic Kerala Experience</span>
-                                            <span class="text-xs text-gray-500 dark:text-cream-400">Apr 2024</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://goldenrishabh.blogspot.com/2024/03/the-power-of-one-thought.html" target="_blank" rel="noopener" class="flex items-center justify-between hover:text-cream-600 dark:hover:text-cream-400 transition-colors">
-                                            <span class="text-sm">The Power of One Thought</span>
-                                            <span class="text-xs text-gray-500 dark:text-cream-400">Mar 2024</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://goldenrishabh.blogspot.com/2024/03/the-art-of-being-alone.html" target="_blank" rel="noopener" class="flex items-center justify-between hover:text-cream-600 dark:hover:text-cream-400 transition-colors">
-                                            <span class="text-sm">The Art of Being Alone</span>
-                                            <span class="text-xs text-gray-500 dark:text-cream-400">Mar 2024</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://goldenrishabh.blogspot.com/2024/02/the-secret.html" target="_blank" rel="noopener" class="flex items-center justify-between hover:text-cream-600 dark:hover:text-cream-400 transition-colors">
-                                            <span class="text-sm">The Secret</span>
-                                            <span class="text-xs text-gray-500 dark:text-cream-400">Feb 2024</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                            
-                            <!-- 2020 Archive -->
-                            <div class="bg-white dark:bg-[#1a1a1a] p-6 rounded-xl border border-cream-200 dark:border-cream-600">
-                                <h4 class="font-bold text-lg mb-4 text-cream-600 dark:text-cream-400">2020</h4>
-                                <ul class="space-y-3">
-                                    <li>
-                                        <a href="https://goldenrishabh.blogspot.com/2020/11/discovery-of-vintage-car.html" target="_blank" rel="noopener" class="flex items-center justify-between hover:text-cream-600 dark:hover:text-cream-400 transition-colors">
-                                            <span class="text-sm">Discovery of Vintage Car</span>
-                                            <span class="text-xs text-gray-500 dark:text-cream-400">Nov 2020</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="https://goldenrishabh.blogspot.com/2020/11/ready-player-one.html" target="_blank" rel="noopener" class="flex items-center justify-between hover:text-cream-600 dark:hover:text-cream-400 transition-colors">
-                                            <span class="text-sm">Ready Player One</span>
-                                            <span class="text-xs text-gray-500 dark:text-cream-400">Nov 2020</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 <!-- Loading state -->
                 <div id="blog-loading" class="text-center py-12">
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cream-600 mx-auto"></div>
