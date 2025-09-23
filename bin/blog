@@ -116,9 +116,50 @@ function generate() {
   }
 
   files.forEach(file => {
+    // Skip utility markdown files that are not blog posts
+    if (file.toLowerCase() === 'booksread.md') {
+      // Attempt cleanup of any previously generated artifacts
+      try {
+        const slug = 'booksread';
+        // Remove from blog/* if present
+        if (fs.existsSync(BLOG_DIR)) {
+          fs.readdirSync(BLOG_DIR, { withFileTypes: true })
+            .filter(d => d.isDirectory())
+            .forEach(d => {
+              const candidate = path.join(BLOG_DIR, d.name, `${slug}.md`);
+              if (fs.existsSync(candidate)) {
+                fs.unlinkSync(candidate);
+                console.log(`  ␡ Removed stray ${path.relative(ROOT_DIR, candidate)}`);
+              }
+            });
+        }
+        // Remove from static-blog/* if present
+        const staticDir = path.join(ROOT_DIR, 'static-blog');
+        if (fs.existsSync(staticDir)) {
+          fs.readdirSync(staticDir, { withFileTypes: true })
+            .filter(d => d.isDirectory())
+            .forEach(d => {
+              const candidate = path.join(staticDir, d.name, `${slug}.txt`);
+              if (fs.existsSync(candidate)) {
+                fs.unlinkSync(candidate);
+                console.log(`  ␡ Removed stray ${path.relative(ROOT_DIR, candidate)}`);
+              }
+            });
+        }
+      } catch {}
+      console.log(`  ↷ Skipping non-post file: ${file}`);
+      return;
+    }
     const rawPath = path.join(RAW_DIR, file);
     const source = fs.readFileSync(rawPath, 'utf8');
-    const { frontmatter, content } = parseFrontmatter(source);
+    const parsed = parseFrontmatter(source);
+    const { frontmatter, content, hasFrontmatter } = parsed;
+
+    // Only process files with frontmatter block
+    if (!hasFrontmatter) {
+      console.log(`  ↷ Skipping ${file} (no frontmatter)`);
+      return;
+    }
 
     const category = (frontmatter.category || 'random').toString().toLowerCase();
     const title = frontmatter.title || path.basename(file, '.md');

@@ -237,8 +237,8 @@ class BlogPostPage {
                 
                 // Clean the content first to prevent rendering issues
                 const cleanContent = content
-                    .replace(/^\s+/gm, '') // Remove leading whitespace that might cause issues
                     .replace(/\r\n/g, '\n') // Normalize line endings
+                    .replace(/\n{3,}/g, '\n\n') // Collapse excessive newlines but keep paragraph breaks
                     .trim();
                 
                 return marked.parse(cleanContent);
