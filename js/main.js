@@ -109,7 +109,7 @@ class PersonalWebsite {
             
             const blogIndex = await response.json();
             this.categories = blogIndex.categories || {};
-            this.latestUpdates = blogIndex.latestUpdates || { read: [], watched: [], building: [] };
+            this.latestUpdates = await this.loadLatestReads();
             
             // Load each blog post
             if (blogIndex.posts && blogIndex.posts.length > 0) {
@@ -693,6 +693,20 @@ class PersonalWebsite {
     }
 
     // Latest Items & Modal
+    async loadLatestReads() {
+        // Load reads list from raw/booksRead.md
+        try {
+            const res = await fetch('raw/booksRead.md');
+            if (!res.ok) throw new Error('booksRead.md not found');
+            const text = await res.text();
+            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            return { read: lines, watched: [], building: [] };
+        } catch (e) {
+            console.warn('Failed to load latest reads:', e.message);
+            return { read: [], watched: [], building: [] };
+        }
+    }
+
     displayLatestItems() {
         const container = document.getElementById('latest-container');
         if (!container || !this.latestUpdates) return;
@@ -718,20 +732,6 @@ class PersonalWebsite {
                 </span>
             `;
             container.appendChild(itemDiv);
-
-            // Collapsible full list under the first item
-            const list = document.createElement('div');
-            list.className = 'mt-3 ml-6 hidden';
-            list.innerHTML = `
-                <ul class="space-y-2 text-sm">
-                    ${items.map(b => `<li class="text-gray-700 dark:text-cream-300">${this.escapeHtml(b)}</li>`).join('')}
-                </ul>
-            `;
-            container.appendChild(list);
-
-            itemDiv.addEventListener('click', () => {
-                list.classList.toggle('hidden');
-            });
         };
 
         createItem('read', 'Read');
@@ -758,12 +758,12 @@ class PersonalWebsite {
                 contentElement.innerHTML = '<p>Nothing to show here yet.</p>';
             } else {
                 contentElement.innerHTML = `
-                    <ul class="space-y-4">
+                    <ul class="space-y-3">
                         ${items.map(item => `
                             <li class="flex items-start">
-                                <span class="text-cream-500 dark:text-cream-400 mt-1 mr-4">&#9679;</span>
+                                <span class="text-cream-500 dark:text-cream-400 mt-1 mr-3">&#9679;</span>
                                 <div>
-                                    <p class="font-semibold text-cream-800 dark:text-cream-200">${this.escapeHtml(item)}</p>
+                                    <p class="text-sm text-cream-800 dark:text-cream-200">${this.escapeHtml(item)}</p>
                                 </div>
                             </li>
                         `).join('')}

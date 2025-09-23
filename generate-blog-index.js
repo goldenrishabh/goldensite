@@ -15,7 +15,6 @@ const path = require('path');
 const BLOG_DIR = './blog';
 const OUTPUT_FILE = './blog-index.json';
 const STATIC_BLOG_DIR = './static-blog'; // New directory for static blog files
-const RAW_DIR = './raw';
 
 // Default category configurations
 const DEFAULT_CATEGORIES = {
@@ -175,31 +174,13 @@ function scanBlogDirectory() {
     return { categories, posts };
 }
 
-function readLatestReads() {
-    try {
-        const booksPath = path.join(RAW_DIR, 'booksRead.md');
-        if (!fs.existsSync(booksPath)) return [];
-        const raw = fs.readFileSync(booksPath, 'utf8');
-        // Split by lines, trim, drop empties; newest first means file top -> index 0
-        return raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-    } catch (e) {
-        console.warn('⚠ Failed to read latest reads:', e.message);
-        return [];
-    }
-}
-
 function generateBlogIndex() {
     console.log('🔍 Scanning blog directory...');
     const { categories, posts } = scanBlogDirectory();
     
     const blogIndex = {
         categories,
-        posts: posts.map(({ title, date, ...post }) => post), // Remove metadata
-        latestUpdates: {
-            read: readLatestReads(),
-            watched: [],
-            building: []
-        }
+        posts: posts.map(({ title, date, ...post }) => post) // Remove metadata
     };
     
     console.log(`\n📝 Generated index with ${Object.keys(categories).length} categories and ${posts.length} posts`);
