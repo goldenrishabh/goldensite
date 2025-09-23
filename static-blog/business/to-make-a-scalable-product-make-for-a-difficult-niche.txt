@@ -3,12 +3,10 @@ title: "To make a scalable product, make for a difficult niche"
 excerpt: "How building for demanding users in a difficult niche can lead to breakthrough products that automatically scale to mass markets."
 category: "Business"
 date: "2024-12-19"
-readTime: "6 min read"
+readTime: "5 min read"
 tags: ["Startup Philosophy"]
 ---
 
-
-# To make a scalable product, make for a difficult niche
 
 Back in '23 when we were doing user interviews, our target users, visually impaired people, told us that they don't want a product which is made specifically for them but a product which is widely adopted by the general consumer and just happens to be accessible. Like how the iPhone is marketed as a consumer product for everyone but it also happens to be accessible (via the TalkBack feature). Now of-course not everything can be made that way. For instance the white cane for the blind is specifically designed for the blind and not used by everyone. But in our context, spectacles are a widely adopted accessory and visually impaired people want to use spectacles which the mass audience uses, so that they feel inclusive. The current smart glasses (now AI glasses) in India are not made with this feedback in mind. They are bulky, ugly looking and in most cases wired. The reason for this is that most of the time, the customer and the user in the assistive technology (AT) market in India are different people. The users (people who use the device) are the Divyangjan while the customers (people who pay for it) are generally CSRs or NGOs. Because of this distinction, the voices of the users gets suppressed and they don't even choose to say much since they get the device for free. At Panoculon Labs however, we decided to keep the user in the loop rather than the customer and take the end-user feedback as we keep iterating. 
 
