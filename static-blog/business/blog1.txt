@@ -2,7 +2,7 @@
 title: "To make a scalable product, make for a difficult niche"
 excerpt: "How building for demanding users in a difficult niche can lead to breakthrough products that automatically scale to mass markets."
 category: Business
-date: 2024-12-19
+date: 2025-09-22
 readTime: "5 min read"
 tags: ['Startup Philosophy']
 ---
