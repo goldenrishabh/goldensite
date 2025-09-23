@@ -1,0 +1,14 @@
+{
+  "name": "goldensite-blog",
+  "version": "1.0.0",
+  "description": "Personal website with automated blog publishing system",
+  "main": "blog-cli.js",
+  "scripts": {
+    "blog:generate": "node blog-cli.js generate",
+    "blog:publish": "node blog-cli.js publish",
+    "blog:help": "node blog-cli.js"
+  },
+  "keywords": ["blog", "static-site", "automation"],
+  "author": "Rishabh Sharma",
+  "license": "MIT"
+}

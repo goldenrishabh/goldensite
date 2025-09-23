@@ -1,30 +1,16 @@
 {
   "categories": {
-    "adventure": {
-      "name": "Adventure",
-      "description": "Adventure posts",
-      "color": "yellow"
+    "business": {
+      "name": "Business",
+      "description": "Startup insights, product strategy, and business philosophy",
+      "color": "green"
     }
   },
-  "posts": [],
-  "latestUpdates": {
-    "read": [
-      "Why We Sleep by Matthew Walker",
-      "Meditations by Marcus Aurelius",
-      "Chip War by Chris Miller",
-      "How will you measure your life by Clayton Christensen",
-      "The monk who sold his ferrari by Robin Sharma",
-      "The forty rules of love by Elif Shafak"
-    ],
-    "watched": [
-      "Star Wars Andor",
-      "Silicon Valley",
-      "The Mandalorian",
-      "The Big Bang Theory"
-    ],
-    "building": [
-      "AI glasses",
-      "Team AgniRath"
-    ]
-  }
+  "posts": [
+    {
+      "id": "to-make-a-scalable-product-make-for-a-difficult-niche",
+      "category": "business",
+      "file": "static-blog/business/to-make-a-scalable-product-make-for-a-difficult-niche.txt"
+    }
+  ]
 }
