@@ -1,3 +1,9 @@
+---
+readTime: "1 min read"
+title: booksRead
+date: 2025-09-23
+---
+
 The Almanack of Naval Ravikant
 Why We Sleep by Matthew Walkers
 Chip War by Chris Miller
