@@ -109,7 +109,18 @@ class PersonalWebsite {
             
             const blogIndex = await response.json();
             this.categories = blogIndex.categories || {};
-            this.latestUpdates = blogIndex.latestUpdates || { read: [], watched: [], building: [] };
+        this.latestUpdates = blogIndex.latestUpdates || { read: [], watched: [], building: [] };
+
+        // Try to load latest reads from raw/booksRead.md
+        try {
+            const booksRes = await fetch('raw/booksRead.md');
+            if (booksRes.ok) {
+                const booksMd = await booksRes.text();
+                this.latestUpdates.read = this.parseBooksReadTable(booksMd);
+            }
+        } catch (e) {
+            console.warn('Could not load raw/booksRead.md');
+        }
             
             // Load each blog post
             if (blogIndex.posts && blogIndex.posts.length > 0) {
@@ -487,15 +498,12 @@ class PersonalWebsite {
     formatDate(dateString) {
         if (!dateString) return '';
         const date = new Date(dateString);
-        // Add a check for invalid date
-        if (isNaN(date.getTime())) {
-            return dateString; // Return original string if parsing fails
-        }
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        if (isNaN(date.getTime())) return dateString;
+        const shortMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const month = shortMonths[date.getMonth()];
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${month} ${day}, ${year}`;
     }
     
     openBlogPost(postId) {
@@ -788,6 +796,25 @@ class PersonalWebsite {
                 closeModal();
             }
         });
+    }
+
+    parseBooksReadTable(markdown) {
+        // Expect a markdown table with headers: Title | Author | Finished
+        const lines = markdown.split(/\r?\n/).map(l => l.trim());
+        const tableStart = lines.findIndex(l => l.startsWith('|'));
+        if (tableStart === -1) return [];
+        // Skip header and separator
+        const dataLines = lines.slice(tableStart + 2).filter(l => l.startsWith('|'));
+        const items = dataLines.map(l => {
+            const cols = l.split('|').map(c => c.trim()).filter(Boolean);
+            const title = cols[0] || '';
+            const author = cols[1] || '';
+            const finished = cols[2] || '';
+            // Compose a concise string
+            const prettyDate = this.formatDate(finished);
+            return `${title} — ${author} (${prettyDate || finished})`;
+        }).filter(Boolean);
+        return items;
     }
 }
 

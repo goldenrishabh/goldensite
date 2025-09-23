@@ -275,11 +275,11 @@ class BlogPostPage {
     formatDate(dateString) {
         if (!dateString) return 'Recently';
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        const shortMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const month = shortMonths[date.getMonth()];
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${month} ${day}, ${year}`;
     }
     
     calculateReadingTime(content) {
