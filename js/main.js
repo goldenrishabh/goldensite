@@ -822,7 +822,7 @@ class PersonalWebsite {
             container.appendChild(itemDiv);
         };
 
-        createItem('read', 'Read');
+        createItem('reading', 'Reading');
         createItem('watched', 'Watched');
         createItem('building', 'Building');
     }
@@ -838,7 +838,7 @@ class PersonalWebsite {
 
         const openModal = (category) => {
             const items = this.latestUpdates[category];
-            const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
+            const categoryName = category === 'reading' ? 'Reading' : category.charAt(0).toUpperCase() + category.slice(1);
             
             titleElement.textContent = `History of Things I've ${categoryName}`;
             
