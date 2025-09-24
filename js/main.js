@@ -840,7 +840,7 @@ class PersonalWebsite {
             const items = this.latestUpdates[category];
             const categoryName = category === 'reading' ? 'Reading' : category.charAt(0).toUpperCase() + category.slice(1);
             
-            titleElement.textContent = `History of Things I've ${categoryName}`;
+            titleElement.textContent = `History of Things I've been ${categoryName}`;
             
             if (!items || items.length === 0) {
                 contentElement.innerHTML = '<p>Nothing to show here yet.</p>';
