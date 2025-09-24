@@ -444,6 +444,13 @@ class PersonalWebsite {
         
         this.hideEmptyState();
         
+        // Apply limit if container requests it (for homepage)
+        const limitAttr = container ? container.getAttribute('data-limit') : null;
+        const limit = limitAttr ? parseInt(limitAttr, 10) : null;
+        if (limit && !isNaN(limit)) {
+            filteredPosts = filteredPosts.slice(0, limit);
+        }
+
         if (this.viewMode === 'list') {
             container.className = 'grid grid-cols-1 gap-4';
             container.innerHTML = filteredPosts.map(post => `

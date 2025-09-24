@@ -544,9 +544,17 @@
                     <button class="blog-category-btn active" data-category="all">All Posts</button>
                 </div>
                 
-                <!-- Blog Posts Container -->
-                <div id="blog-posts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Blog Posts Container (limited on home) -->
+                <div id="blog-posts" data-limit="3" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <!-- Blog posts will be loaded here dynamically -->
+                </div>
+
+                <!-- View All -->
+                <div class="text-center mt-10">
+                    <a href="blogs.html" class="inline-flex items-center px-6 py-2 bg-cream-600 dark:bg-cream-500 text-white rounded-full hover:bg-cream-700 dark:hover:bg-cream-600 transition">
+                        View all posts
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    </a>
                 </div>
                 
                 <!-- Loading state -->

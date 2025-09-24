@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Blogs - The Golden Rishabh</title>
+    <meta name="description" content="All blog posts by Rishabh - grid/list with search.">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .line-clamp-4 { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+    </style>
+    <script>
+        tailwind.config = { darkMode: 'class' };
+    </script>
+</head>
+<body class="font-mono bg-cream-50 dark:bg-black text-gray-900 dark:text-cream-100">
+    <nav class="border-b border-cream-200 dark:border-cream-600 glass">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="index.html" class="text-xl font-bold tracking-tight">
+                <span class="text-cream-600 dark:text-cream-400">&lt;</span>
+                <span>All Blogs</span>
+                <span class="text-cream-600 dark:text-cream-400">/&gt;</span>
+            </a>
+            <a href="index.html#blog" class="text-sm underline">Back to Home</a>
+        </div>
+    </nav>
+
+    <main class="py-12">
+        <div class="max-w-6xl mx-auto px-6">
+            <h1 class="text-3xl font-bold mb-6"><span class="text-cream-600 dark:text-cream-400">&lt;</span>All Posts<span class="text-cream-600 dark:text-cream-400">/&gt;</span></h1>
+
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+                <div class="w-full md:w-1/2">
+                    <input id="blog-search" type="text" placeholder="Search posts..." class="w-full px-4 py-2 rounded-full border border-cream-300 dark:border-cream-600 bg-white dark:bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-cream-500" />
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="view-grid" class="px-4 py-2 rounded-lg border border-cream-300 dark:border-cream-600 text-gray-700 dark:text-cream-300 hover:border-cream-500 dark:hover:border-cream-500 transition-colors">Grid</button>
+                    <button id="view-list" class="px-4 py-2 rounded-lg border border-cream-300 dark:border-cream-600 text-gray-700 dark:text-cream-300 hover:border-cream-500 dark:hover:border-cream-500 transition-colors">List</button>
+                </div>
+            </div>
+
+            <div id="blog-categories" class="flex flex-wrap justify-center gap-4 mb-12">
+                <button class="blog-category-btn active" data-category="all">All Posts</button>
+            </div>
+
+            <div id="blog-posts" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+            <div id="blog-loading" class="text-center py-12">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cream-600 mx-auto"></div>
+                <p class="mt-4 text-gray-600 dark:text-cream-400">Loading posts...</p>
+            </div>
+            <div id="blog-empty" class="hidden text-center py-12">
+                <p class="text-gray-600 dark:text-cream-400">No posts found in this category.</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
+
