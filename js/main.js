@@ -781,13 +781,17 @@ class PersonalWebsite {
         // Load reads list from raw/booksRead.md
         try {
             const res = await fetch('raw/booksRead.md');
+            const res2 = await fetch('raw/building.md');
             if (!res.ok) throw new Error('booksRead.md not found');
+            if (!res2.ok) throw new Error('building.md not found');
             const text = await res.text();
+            const text2 = await res2.text();
             const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-            return { read: lines, watched: [], building: [] };
+            const lines2 = text2.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            return { read: lines, watched: [], building: lines2 };
         } catch (e) {
             console.warn('Failed to load latest reads:', e.message);
-            return { read: [], watched: [], building: [] };
+            return { reading: [], watched: [], building: [] };
         }
     }
 
