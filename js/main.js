@@ -788,7 +788,7 @@ class PersonalWebsite {
             const text2 = await res2.text();
             const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
             const lines2 = text2.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-            return { read: lines, watched: [], building: lines2 };
+            return { reading: lines, watched: [], building: lines2 };
         } catch (e) {
             console.warn('Failed to load latest reads:', e.message);
             return { reading: [], watched: [], building: [] };
