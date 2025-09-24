@@ -4,36 +4,6 @@
       "name": "Business",
       "description": "Posts about business",
       "color": "gray"
-    },
-    "reviews": {
-      "name": "Reviews",
-      "description": "Book and movie reviews",
-      "color": "purple"
-    },
-    "adventure": {
-      "name": "Adventure",
-      "description": "Travel and experiences",
-      "color": "orange"
-    },
-    "philosophical": {
-      "name": "Philosophical",
-      "description": "Thoughts and reflections",
-      "color": "yellow"
-    },
-    "archaeology": {
-      "name": "Archaeology",
-      "description": "Notes on archaeology",
-      "color": "blue"
-    },
-    "personal": {
-      "name": "Personal",
-      "description": "Personal updates and musings",
-      "color": "pink"
-    },
-    "random": {
-      "name": "Random Thoughts",
-      "description": "Casual observations, personal musings",
-      "color": "green"
     }
   },
   "posts": [
