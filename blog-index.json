@@ -1,5 +1,10 @@
 {
   "categories": {
+    "book review": {
+      "name": "Book review",
+      "description": "Posts about book review",
+      "color": "gray"
+    },
     "business": {
       "name": "Business",
       "description": "Posts about business",
@@ -7,6 +12,11 @@
     }
   },
   "posts": [
+    {
+      "id": "blog2",
+      "category": "book review",
+      "file": "static-blog/book review/blog2.txt"
+    },
     {
       "id": "blog1",
       "category": "business",
