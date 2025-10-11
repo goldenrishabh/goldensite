@@ -13,6 +13,11 @@
   },
   "posts": [
     {
+      "id": "blog3",
+      "category": "business",
+      "file": "static-blog/business/blog3.txt"
+    },
+    {
       "id": "blog2",
       "category": "book review",
       "file": "static-blog/book review/blog2.txt"
