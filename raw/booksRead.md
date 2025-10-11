@@ -1,3 +1,4 @@
+Transurfing in 78 days by Vadim Zealand
 The Almanack of Naval Ravikant
 Why We Sleep by Matthew Walkers
 Chip War by Chris Miller
