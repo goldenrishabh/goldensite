@@ -1,3 +1,6 @@
+Quantam Computing for Everyone by Chris Bernhardt
+My Hanuman Chalisa by Devadutt Patanaik
+White Nights by Fyodor Dostoevsky
 Transurfing in 78 days by Vadim Zealand
 The Almanack of Naval Ravikant
 Why We Sleep by Matthew Walkers
