@@ -188,7 +188,7 @@ class BlogPostPage {
         const tagsElement = document.getElementById('post-tags');
         if (tagsElement && this.post.tags) {
             tagsElement.innerHTML = this.post.tags.map(tag => `
-                <span class="text-xs px-3 py-1 bg-cream-200 dark:bg-gray-700 text-cream-700 dark:text-cream-300 rounded-full border border-cream-300 dark:border-cream-600">
+                <span class="text-xs px-3 py-1 bg-cream-100 dark:bg-[#242630] text-cream-800 dark:text-[#a09a92] rounded-full border border-cream-200 dark:border-[#2e3038]" style="font-family: 'Inter', sans-serif;">
                     #${tag}
                 </span>
             `).join('');

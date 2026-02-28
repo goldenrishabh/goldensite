@@ -27,21 +27,23 @@
                 extend: {
                     colors: {
                         cream: {
-                            50: '#fefcf3',
-                            100: '#fef7e0',
-                            200: '#fcefc1',
-                            300: '#f8e197',
-                            400: '#f3cd6b',
-                            500: '#eeb948',
-                            600: '#de9f39',
-                            700: '#b97f32',
-                            800: '#956530',
-                            900: '#7a5429',
-                            950: '#422d14',
+                            50: '#faf9f7',
+                            100: '#f5f0e8',
+                            200: '#e8dfd2',
+                            300: '#d4c5ab',
+                            400: '#c4a96e',
+                            500: '#b8960b',
+                            600: '#a07d2e',
+                            700: '#8a6b28',
+                            800: '#6e5520',
+                            900: '#5a451a',
+                            950: '#2e230d',
                         }
                     },
                     fontFamily: {
-                        'mono': ['JetBrains Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'monospace'],
+                        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        'serif': ['Lora', 'Georgia', 'Times New Roman', 'serif'],
+                        'mono': ['JetBrains Mono', 'Monaco', 'Cascadia Code', 'monospace'],
                     }
                 }
             }
@@ -49,52 +51,53 @@
     </script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
-        
-        .grain {
-            background-image: 
-                radial-gradient(circle at 1px 1px, rgba(255,255,255,.15) 1px, transparent 0);
-            background-size: 20px 20px;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
         
         .glass {
-            backdrop-filter: blur(10px);
-            background: rgba(254, 252, 243, 0.8);
+            backdrop-filter: blur(12px);
+            background: rgba(250, 249, 247, 0.9);
         }
         
         .dark .glass {
-            background: rgba(66, 45, 20, 0.8);
+            background: rgba(26, 27, 32, 0.92);
         }
 
-        /* Enhanced Prose Styles */
+        /* Prose Styles — optimized for reading */
         .prose {
+            font-family: 'Lora', Georgia, serif;
             color: #374151;
             max-width: none;
+            font-size: 1.125rem;
+            line-height: 1.85;
         }
 
         .dark .prose {
-            color: #f3cd6b;
+            color: #c9c5bd;
+        }
+
+        .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+            font-family: 'Inter', system-ui, sans-serif;
         }
 
         .prose h1 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            line-height: 1.2;
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1.3;
             margin-bottom: 2rem;
-            color: #eeb948;
-            border-bottom: 3px solid #eeb948;
+            color: #1f2937;
+            border-bottom: 2px solid #d4c5ab;
             padding-bottom: 0.75rem;
         }
 
         .prose h2 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            line-height: 1.3;
-            margin-top: 2.5rem;
-            margin-bottom: 1.5rem;
-            color: #de9f39;
+            font-size: 1.375rem;
+            font-weight: 600;
+            line-height: 1.35;
+            margin-top: 2.75rem;
+            margin-bottom: 1.25rem;
+            color: #374151;
             position: relative;
-            padding-left: 1.5rem;
+            padding-left: 1.25rem;
         }
 
         .prose h2::before {
@@ -103,80 +106,79 @@
             left: 0;
             top: 50%;
             transform: translateY(-50%);
-            width: 4px;
+            width: 3px;
             height: 60%;
-            background: linear-gradient(135deg, #eeb948, #de9f39);
+            background: linear-gradient(135deg, #c4a96e, #a07d2e);
             border-radius: 2px;
         }
 
         .prose h3 {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 600;
             line-height: 1.4;
             margin-top: 2rem;
             margin-bottom: 1rem;
-            color: #b97f32;
+            color: #4b5563;
             padding-left: 0.75rem;
-            border-left: 2px solid #eeb948;
+            border-left: 2px solid #d4c5ab;
         }
 
         .prose h4, .prose h5, .prose h6 {
-            color: #956530;
+            color: #6b7280;
             font-weight: 600;
             margin-top: 1.5rem;
             margin-bottom: 1rem;
         }
 
         .prose p {
-            margin-bottom: 1rem;
-            line-height: 1.6;
-            font-size: 0.95rem;
+            margin-bottom: 1.75rem;
+            line-height: 1.85;
+            letter-spacing: 0.01em;
         }
 
         .prose ul, .prose ol {
             margin: 1.5rem 0;
-            padding-left: 2rem;
+            padding-left: 1.75rem;
         }
 
         .prose li {
-            margin-bottom: 0.75rem;
-            line-height: 1.7;
+            margin-bottom: 0.625rem;
+            line-height: 1.8;
         }
 
         .prose li::marker {
-            color: #eeb948;
-            font-weight: bold;
+            color: #a07d2e;
         }
 
         .prose blockquote {
-            border-left: 4px solid #eeb948;
-            padding-left: 1.5rem;
+            border-left: 3px solid #c4a96e;
+            padding: 1.25rem 1.5rem;
             margin: 2rem 0;
             font-style: italic;
-            background: rgba(238, 185, 72, 0.05);
-            padding: 1.5rem;
+            background: rgba(212, 197, 171, 0.08);
             border-radius: 0 8px 8px 0;
+            color: #4b5563;
         }
 
         .prose code {
-            background: rgba(238, 185, 72, 0.1);
-            color: #de9f39;
-            padding: 0.25rem 0.5rem;
+            background: rgba(160, 125, 46, 0.08);
+            color: #8a6b28;
+            padding: 0.2rem 0.45rem;
             border-radius: 4px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9em;
+            font-size: 0.85em;
             font-weight: 500;
         }
 
         .prose pre {
-            background: #1a1a1a;
-            color: #f3cd6b;
+            background: #1e1f26;
+            color: #d4d4d8;
             padding: 1.5rem;
-            border-radius: 12px;
+            border-radius: 10px;
             overflow-x: auto;
             margin: 2rem 0;
-            border: 1px solid #eeb948;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(160, 125, 46, 0.2);
+            font-family: 'JetBrains Mono', monospace;
         }
 
         .prose pre code {
@@ -184,35 +186,35 @@
             color: inherit;
             padding: 0;
             border-radius: 0;
-            font-size: 0.95em;
+            font-size: 0.9em;
         }
 
         .prose a {
-            color: #eeb948;
+            color: #8a6b28;
             text-decoration: underline;
+            text-decoration-color: rgba(138, 107, 40, 0.3);
             text-underline-offset: 3px;
             transition: all 0.2s ease;
         }
 
         .prose a:hover {
-            color: #de9f39;
-            text-decoration-thickness: 2px;
+            color: #6e5520;
+            text-decoration-color: #6e5520;
         }
 
         .prose strong {
-            color: #eeb948;
+            color: #1f2937;
             font-weight: 700;
         }
 
         .prose em {
-            color: #de9f39;
             font-style: italic;
         }
 
         .prose hr {
             border: none;
             height: 1px;
-            background: linear-gradient(90deg, transparent, #eeb948, transparent);
+            background: linear-gradient(90deg, transparent, #d4c5ab, transparent);
             margin: 3rem 0;
         }
 
@@ -220,6 +222,8 @@
             width: 100%;
             border-collapse: collapse;
             margin: 2rem 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
         }
 
         .prose th, .prose td {
@@ -229,67 +233,77 @@
         }
 
         .prose th {
-            background: rgba(238, 185, 72, 0.1);
+            background: rgba(212, 197, 171, 0.15);
             font-weight: 600;
-            color: #de9f39;
+            color: #374151;
         }
 
         .dark .prose th, .dark .prose td {
-            border-color: #333;
+            border-color: #2e3038;
         }
 
         .dark .prose th {
-            background: rgba(238, 185, 72, 0.2);
+            background: rgba(196, 169, 110, 0.1);
         }
 
-        /* Dark mode prose adjustments */
-        .dark .prose h1, .dark .prose h2, .dark .prose h3, .dark .prose h4, .dark .prose h5, .dark .prose h6 {
-            color: #eeb948;
+        /* Dark mode prose */
+        .dark .prose h1 {
+            color: #e8e4de;
+            border-bottom-color: rgba(196, 169, 110, 0.3);
+        }
+
+        .dark .prose h2 {
+            color: #ddd8d0;
+        }
+
+        .dark .prose h3 {
+            color: #bdb8b0;
+            border-left-color: rgba(196, 169, 110, 0.3);
+        }
+
+        .dark .prose h4, .dark .prose h5, .dark .prose h6 {
+            color: #a09a92;
+        }
+
+        .dark .prose p, .dark .prose li {
+            color: #c9c5bd;
+        }
+
+        .dark .prose strong {
+            color: #e4e0d8;
         }
 
         .dark .prose code {
-            background: rgba(238, 185, 72, 0.2);
-            color: #f3cd6b;
+            background: rgba(196, 169, 110, 0.12);
+            color: #d4b86a;
         }
 
         .dark .prose blockquote {
-            background: rgba(238, 185, 72, 0.15);
-            border-color: #eeb948;
-            color: #f3cd6b;
+            background: rgba(196, 169, 110, 0.06);
+            border-color: rgba(196, 169, 110, 0.4);
+            color: #a8a49c;
+        }
+
+        .dark .prose a {
+            color: #d4b86a;
+            text-decoration-color: rgba(212, 184, 106, 0.3);
+        }
+
+        .dark .prose a:hover {
+            color: #e4cc84;
+            text-decoration-color: #e4cc84;
         }
 
         .dark .prose table {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.2);
         }
 
         .dark .prose th {
-            background: rgba(238, 185, 72, 0.3);
-            color: #eeb948;
-        }
-
-        .dark .prose td {
-            background: rgba(0, 0, 0, 0.1);
-        }
-
-        /* Enhanced dark mode styling */
-        .dark .prose p, .dark .prose li {
-            color: #f3cd6b;
-        }
-
-        .dark .prose ul > li::before {
-            content: "▸";
-            color: #eeb948;
-            font-weight: bold;
-            position: absolute;
-            left: -1rem;
-        }
-
-        .dark .prose ol > li::before {
-            color: #eeb948;
-            font-weight: bold;
+            color: #ddd8d0;
         }
 
         .category-badge {
+            font-family: 'Inter', sans-serif;
             font-size: 0.75rem;
             padding: 0.375rem 0.75rem;
             border-radius: 9999px;
@@ -300,32 +314,34 @@
         .category-philosophical { background-color: rgb(250 245 255); color: rgb(147 51 234); }
         .category-random { background-color: rgb(240 253 244); color: rgb(22 163 74); }
         .category-personal { background-color: rgb(253 242 248); color: rgb(219 39 119); }
+        .category-business { background-color: rgb(254 249 235); color: rgb(161 98 7); }
 
         .dark .category-technical,
         .dark .category-philosophical,
         .dark .category-random,
-        .dark .category-personal {
-            background-color: #111827 !important;
-            color: #f3cd6b !important;
-            border: 1px solid #de9f39 !important;
+        .dark .category-personal,
+        .dark .category-business {
+            background-color: rgba(196, 169, 110, 0.08) !important;
+            color: #c9c5bd !important;
+            border: 1px solid rgba(196, 169, 110, 0.25) !important;
         }
     </style>
 </head>
-<body class="font-mono bg-cream-50 dark:bg-black text-gray-900 dark:text-cream-100 transition-all duration-500 grain">
+<body class="font-sans bg-cream-50 dark:bg-[#1a1b20] text-gray-900 dark:text-[#c9c5bd] transition-all duration-500">
     
     <!-- Navigation -->
-    <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-cream-200 dark:border-cream-600">
+    <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-cream-200 dark:border-[#2a2b32]">
         <div class="max-w-6xl mx-auto px-6 py-4">
             <div class="flex justify-between items-center">
-                <a href="index.html" class="text-xl font-bold tracking-tight hover:text-cream-600 dark:hover:text-cream-400 transition-colors">
-                    <span class="text-cream-600 dark:text-cream-400">&lt;</span>
+                <a href="index.html" class="text-xl font-bold tracking-tight hover:text-cream-600 dark:hover:text-[#d4b86a] transition-colors">
+                    <span class="text-cream-600 dark:text-[#d4b86a]">&lt;</span>
                     <span>The Goldenrishabh</span>
-                    <span class="text-cream-600 dark:text-cream-400">/&gt;</span>
+                    <span class="text-cream-600 dark:text-[#d4b86a]">/&gt;</span>
                 </a>
                 
                 <div class="flex items-center space-x-6">
-                    <a href="index.html" class="text-gray-700 dark:text-cream-300 hover:text-cream-600 dark:hover:text-cream-400 transition-colors">← Back to Home</a>
-                    <button id="theme-toggle" class="p-2 rounded-full hover:bg-cream-200 dark:hover:bg-gray-800 transition-colors">
+                    <a href="index.html" class="text-gray-700 dark:text-[#a09a92] hover:text-cream-600 dark:hover:text-[#d4b86a] transition-colors">← Back to Home</a>
+                    <button id="theme-toggle" class="p-2 rounded-full hover:bg-cream-200 dark:hover:bg-[#2a2b32] transition-colors">
                         <svg class="w-5 h-5 dark:hidden" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
                         </svg>
@@ -344,7 +360,7 @@
             <!-- Loading State -->
             <div id="loading" class="text-center py-20">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-cream-600 mx-auto"></div>
-                <p class="mt-4 text-gray-600 dark:text-cream-400">Loading post...</p>
+                <p class="mt-4 text-gray-600 dark:text-[#8a857e]">Loading post...</p>
             </div>
             
             <!-- Error State -->
@@ -354,21 +370,21 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                     </svg>
                 </div>
-                <p class="text-gray-600 dark:text-cream-400">Post not found or failed to load.</p>
-                <a href="index.html#blog" class="mt-4 inline-block px-6 py-2 bg-cream-600 text-white rounded-lg hover:bg-cream-700 transition-colors">View All Posts</a>
+                <p class="text-gray-600 dark:text-[#8a857e]">Post not found or failed to load.</p>
+                <a href="index.html#blog" class="mt-4 inline-block px-6 py-2 bg-cream-700 dark:bg-[#c4a96e] text-white dark:text-[#1a1b20] rounded-lg hover:bg-cream-800 dark:hover:bg-[#d4b86a] transition-colors">View All Posts</a>
             </div>
             
             <!-- Post Content -->
             <article id="post-content" class="hidden">
                 <!-- Post Header -->
-                <header class="mb-8 pb-8 border-b border-cream-200 dark:border-cream-600">
+                <header class="mb-10 pb-8 border-b border-cream-200 dark:border-[#2a2b32]">
                     <div class="flex items-center gap-4 mb-6">
                         <span id="post-category" class="category-badge"></span>
-                        <span id="post-date" class="text-gray-500 dark:text-cream-400"></span>
-                        <span id="post-read-time" class="text-gray-500 dark:text-cream-400"></span>
+                        <span id="post-date" class="text-gray-500 dark:text-[#8a857e] text-sm"></span>
+                        <span id="post-read-time" class="text-gray-500 dark:text-[#8a857e] text-sm"></span>
                     </div>
-                    <h1 id="post-title-display" class="text-4xl md:text-5xl font-bold mb-6 text-cream-600 dark:text-cream-400"></h1>
-                    <p id="post-excerpt" class="text-xl text-gray-600 dark:text-cream-300 leading-relaxed"></p>
+                    <h1 id="post-title-display" class="text-4xl md:text-5xl font-bold mb-6 text-gray-900 dark:text-[#e8e4de] font-sans leading-tight"></h1>
+                    <p id="post-excerpt" class="text-xl text-gray-600 dark:text-[#a09a92] leading-relaxed font-serif"></p>
                 </header>
                 
                 <!-- Post Body -->
@@ -377,13 +393,13 @@
                 </div>
                 
                 <!-- Post Footer -->
-                <footer class="mt-12 pt-8 border-t border-cream-200 dark:border-cream-600">
+                <footer class="mt-16 pt-8 border-t border-cream-200 dark:border-[#2a2b32]">
                     <div class="flex items-center justify-between flex-wrap gap-4">
                         <div class="flex items-center space-x-2">
-                            <svg class="w-4 h-4 text-cream-600" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-4 h-4 text-cream-600 dark:text-[#8a857e]" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
                             </svg>
-                            <span class="text-sm text-gray-600 dark:text-cream-400">
+                            <span class="text-sm text-gray-600 dark:text-[#8a857e]">
                                 Published on <span id="post-date-footer"></span>
                             </span>
                         </div>
@@ -393,7 +409,7 @@
                     </div>
                     
                     <div class="mt-8 text-center">
-                        <a href="index.html#blog" class="inline-flex items-center px-6 py-3 bg-cream-600 dark:bg-cream-500 text-white rounded-lg hover:bg-cream-700 dark:hover:bg-cream-600 transition-all duration-300">
+                        <a href="index.html#blog" class="inline-flex items-center px-6 py-3 bg-cream-700 dark:bg-[#c4a96e] text-white dark:text-[#1a1b20] rounded-lg hover:bg-cream-800 dark:hover:bg-[#d4b86a] transition-all duration-300 font-medium">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path>
                             </svg>

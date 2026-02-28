@@ -165,7 +165,7 @@ class PersonalWebsite {
         // Also hide latest loading state
         const latestContainer = document.getElementById('latest-container');
         if (latestContainer) {
-            latestContainer.innerHTML = '<p class="text-gray-600 dark:text-cream-400">Could not load latest updates.</p>';
+            latestContainer.innerHTML = '<p class="text-gray-600 dark:text-[#8a857e]">Could not load latest updates.</p>';
         }
     }
     
@@ -318,11 +318,11 @@ class PersonalWebsite {
         // Create mobile dropdown items
         if (mobileDropdown) {
             let mobileHTML = `
-                <a href="#blog" class="block px-3 py-2 text-gray-600 dark:text-cream-400 hover:text-cream-600 dark:hover:text-cream-400 transition-colors" data-category="all">
+                <a href="#blog" class="block px-3 py-2 text-gray-600 dark:text-[#a09a92] hover:text-cream-700 dark:hover:text-[#d4b86a] transition-colors" data-category="all">
                     <div class="flex items-center">
                         <div class="category-icon all mr-2"></div>
                         <span>All Posts</span>
-                        <span class="ml-auto text-xs bg-cream-200 dark:bg-gray-700 text-cream-700 dark:text-cream-300 px-2 py-1 rounded-full">${totalPosts}</span>
+                        <span class="ml-auto text-xs bg-cream-200 dark:bg-[#242630] text-cream-700 dark:text-[#a09a92] px-2 py-1 rounded-full">${totalPosts}</span>
                     </div>
                 </a>
             `;
@@ -331,11 +331,11 @@ class PersonalWebsite {
                 const count = categoryCounts[key] || 0;
                 if (count > 0) {
                     mobileHTML += `
-                        <a href="#blog" class="block px-3 py-2 text-gray-600 dark:text-cream-400 hover:text-cream-600 dark:hover:text-cream-400 transition-colors" data-category="${key}">
+                        <a href="#blog" class="block px-3 py-2 text-gray-600 dark:text-[#a09a92] hover:text-cream-700 dark:hover:text-[#d4b86a] transition-colors" data-category="${key}">
                             <div class="flex items-center">
                                 <div class="category-icon ${key} mr-2"></div>
                                 <span>${category.name}</span>
-                                <span class="ml-auto text-xs bg-cream-200 dark:bg-gray-700 text-cream-700 dark:text-cream-300 px-2 py-1 rounded-full">${count}</span>
+                                <span class="ml-auto text-xs bg-cream-200 dark:bg-[#242630] text-cream-700 dark:text-[#a09a92] px-2 py-1 rounded-full">${count}</span>
                             </div>
                         </a>
                     `;
@@ -455,13 +455,13 @@ class PersonalWebsite {
             container.className = 'grid grid-cols-1 gap-4';
             container.innerHTML = filteredPosts.map(post => `
                 <article class="blog-post-card group cursor-pointer" data-post-id="${post.id}">
-                    <div class="bg-white dark:bg-[#1a1a1a] rounded-xl border border-cream-200 dark:border-cream-600 p-4 hover:shadow-md transition h-full">
+                    <div class="bg-white dark:bg-[#1e1f26] rounded-xl border border-cream-200 dark:border-[#2e3038] p-4 hover:shadow-md transition h-full">
                         <div class="flex items-center gap-3">
                             <span class="category-badge category-${post.category}">${this.getCategoryName(post.category)}</span>
-                            <h3 class="font-bold group-hover:text-cream-600 dark:group-hover:text-cream-400">${post.title}</h3>
-                            <span class="ml-auto text-sm text-gray-500 dark:text-cream-400">${this.formatDate(post.date)}</span>
+                            <h3 class="font-bold group-hover:text-cream-700 dark:group-hover:text-[#d4b86a]">${post.title}</h3>
+                            <span class="ml-auto text-sm text-gray-500 dark:text-[#8a857e]">${this.formatDate(post.date)}</span>
                         </div>
-                        <div class="mt-2 text-sm text-gray-600 dark:text-cream-300 line-clamp-2">${this.getPostExcerpt(post)}</div>
+                        <div class="mt-2 text-sm text-gray-600 dark:text-[#a09a92] line-clamp-2">${this.getPostExcerpt(post)}</div>
                     </div>
                 </article>
             `).join('');
@@ -469,28 +469,28 @@ class PersonalWebsite {
             container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8';
             container.innerHTML = filteredPosts.map(post => `
                 <article class="blog-post-card group cursor-pointer" data-post-id="${post.id}">
-                    <div class="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-cream-200 dark:border-cream-600 overflow-hidden hover:shadow-xl transition-all duration-300 group-hover:scale-105 h-full flex flex-col">
+                    <div class="bg-white dark:bg-[#1e1f26] rounded-2xl border border-cream-200 dark:border-[#2e3038] overflow-hidden hover:shadow-xl transition-all duration-300 group-hover:scale-105 h-full flex flex-col">
                         <div class="p-6 flex flex-col grow">
                             <div class="flex items-center justify-between mb-4">
                                 <span class="category-badge category-${post.category}">${this.getCategoryName(post.category)}</span>
-                                <span class="text-sm text-gray-500 dark:text-cream-400">${post.readTime || 'Quick read'}</span>
+                                <span class="text-sm text-gray-500 dark:text-[#8a857e]">${post.readTime || 'Quick read'}</span>
                             </div>
                             
-                            <h3 class="text-xl font-bold mb-3 group-hover:text-cream-600 dark:group-hover:text-cream-400 transition-colors">
+                            <h3 class="text-xl font-bold mb-3 group-hover:text-cream-700 dark:group-hover:text-[#d4b86a] transition-colors">
                                 ${post.title}
                             </h3>
                             
-                            <p class="text-gray-600 dark:text-cream-300 mb-4 leading-relaxed line-clamp-4">
+                            <p class="text-gray-600 dark:text-[#a09a92] mb-4 leading-relaxed line-clamp-4">
                                 ${this.getPostExcerpt(post)}
                             </p>
                             
                             <div class="flex items-center justify-between mt-auto">
-                                <span class="text-sm text-gray-500 dark:text-cream-400">
+                                <span class="text-sm text-gray-500 dark:text-[#8a857e]">
                                     ${this.formatDate(post.date)}
                                 </span>
                                 <div class="flex flex-wrap gap-2">
                                     ${(post.tags || []).slice(0, 2).map(tag => `
-                                        <span class="text-xs px-2 py-1 bg-cream-100 dark:bg-[#1a1a1a] text-cream-700 dark:text-cream-400 rounded-full dark:border dark:border-cream-600">
+                                        <span class="text-xs px-2 py-1 bg-cream-100 dark:bg-[#242630] text-cream-700 dark:text-[#a09a92] rounded-full dark:border dark:border-[#2e3038]">
                                             ${tag}
                                         </span>
                                     `).join('')}
@@ -748,8 +748,8 @@ class PersonalWebsite {
         const viewList = document.getElementById('view-list');
         const setActive = () => {
             if (viewGrid && viewList) {
-                const activeClasses = ' bg-cream-600 dark:bg-cream-500 text-white border-cream-600 dark:border-cream-500';
-                const baseClasses = 'px-4 py-2 rounded-lg border border-cream-300 dark:border-cream-600 text-gray-700 dark:text-cream-300 hover:border-cream-500 dark:hover:border-cream-500 transition-colors';
+                const activeClasses = ' bg-cream-700 dark:bg-[#c4a96e] text-white dark:text-[#1a1b20] border-cream-700 dark:border-[#c4a96e]';
+                const baseClasses = 'px-4 py-2 rounded-lg border border-cream-200 dark:border-[#2e3038] text-gray-700 dark:text-[#a09a92] hover:border-cream-400 dark:hover:border-[#c4a96e] transition-colors';
                 viewGrid.className = baseClasses + (this.viewMode === 'grid' ? activeClasses : '');
                 viewList.className = baseClasses + (this.viewMode === 'list' ? activeClasses : '');
             }
@@ -813,10 +813,10 @@ class PersonalWebsite {
             itemDiv.setAttribute('data-latest-category', category);
 
             itemDiv.innerHTML = `
-                <span class="text-cream-600 dark:text-cream-400 mr-3 transition-transform group-hover:rotate-90">▸</span>
+                <span class="text-cream-600 dark:text-[#c4a96e] mr-3 transition-transform group-hover:rotate-90">▸</span>
                 <span>
                     ${label}: 
-                    <span class="font-medium text-cream-700 dark:text-cream-300 group-hover:underline">${this.escapeHtml(latestItem)}</span>
+                    <span class="font-medium text-cream-700 dark:text-[#c9c5bd] group-hover:underline">${this.escapeHtml(latestItem)}</span>
                 </span>
             `;
             container.appendChild(itemDiv);
@@ -848,9 +848,9 @@ class PersonalWebsite {
                     <ul class="space-y-3">
                         ${items.map(item => `
                             <li class="flex items-start">
-                                <span class="text-cream-500 dark:text-cream-400 mt-1 mr-3">&#9679;</span>
+                                <span class="text-cream-400 dark:text-[#c4a96e] mt-1 mr-3">&#9679;</span>
                                 <div>
-                                    <p class="text-sm text-cream-800 dark:text-cream-200">${this.escapeHtml(item)}</p>
+                                    <p class="text-sm text-gray-700 dark:text-[#c9c5bd]">${this.escapeHtml(item)}</p>
                                 </div>
                             </li>
                         `).join('')}
