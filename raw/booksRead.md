@@ -1,3 +1,4 @@
+The Black Swan by Nassim Taleb
 Quantam Computing for Everyone by Chris Bernhardt
 My Hanuman Chalisa by Devadutt Patanaik
 White Nights by Fyodor Dostoevsky

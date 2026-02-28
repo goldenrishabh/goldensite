@@ -778,17 +778,20 @@ class PersonalWebsite {
 
     // Latest Items & Modal
     async loadLatestReads() {
-        // Load reads list from raw/booksRead.md
+        // Load reads list from raw/booksRead.md, raw/building.md, raw/watching.md
         try {
             const res = await fetch('raw/booksRead.md');
             const res2 = await fetch('raw/building.md');
+            const res3 = await fetch('raw/watching.md');
             if (!res.ok) throw new Error('booksRead.md not found');
             if (!res2.ok) throw new Error('building.md not found');
             const text = await res.text();
             const text2 = await res2.text();
+            const text3 = res3.ok ? await res3.text() : '';
             const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
             const lines2 = text2.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-            return { reading: lines, watched: [], building: lines2 };
+            const lines3 = text3 ? text3.split(/\r?\n/).map(l => l.trim()).filter(Boolean) : [];
+            return { reading: lines, watched: lines3, building: lines2 };
         } catch (e) {
             console.warn('Failed to load latest reads:', e.message);
             return { reading: [], watched: [], building: [] };
@@ -823,7 +826,7 @@ class PersonalWebsite {
         };
 
         createItem('reading', 'Reading');
-        createItem('watched', 'Watched');
+        createItem('watched', 'Watching');
         createItem('building', 'Building');
     }
 
@@ -836,10 +839,10 @@ class PersonalWebsite {
 
         if (!modal || !closeButton || !titleElement || !contentElement || !latestContainer) return;
 
+        const categoryTitles = { reading: "Things I've Read", watched: "Things I'm Watching", building: "Things I'm Building" };
         const openModal = (category) => {
             const items = this.latestUpdates[category];
-            
-            titleElement.textContent = `History of Things I've Read`;
+            titleElement.textContent = categoryTitles[category] || 'Latest';
             
             if (!items || items.length === 0) {
                 contentElement.innerHTML = '<p>Nothing to show here yet.</p>';
