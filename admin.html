@@ -101,6 +101,17 @@
         .dark .prose blockquote { background: rgba(196,169,110,0.06); border-color: rgba(196,169,110,0.4); color: #a8a49c; }
         .dark .prose a { color: #d4b86a; }
 
+        /* Animation embeds (match blog-post.html) */
+        .animation-embed { position: relative; margin: 2rem 0; border-radius: 10px; overflow: hidden; border: 1px solid rgba(160,125,46,0.2); background: #0f1014; }
+        .animation-embed iframe { display: block; width: 100%; border: 0; background: transparent; }
+        .animation-shield { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: rgba(15,16,20,0.55); color: #f5f0e8; font-family: 'Inter', system-ui, sans-serif; font-weight: 600; font-size: 0.95rem; cursor: pointer; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); transition: background 0.2s; user-select: none; }
+        .animation-shield:hover { background: rgba(15,16,20,0.7); }
+        .animation-shield svg { width: 1.1rem; height: 1.1rem; }
+        .animation-release { position: absolute; top: 0.5rem; right: 0.5rem; z-index: 3; display: none; align-items: center; gap: 0.35rem; padding: 0.35rem 0.75rem; background: rgba(15,16,20,0.75); color: #f5f0e8; font-family: 'Inter', system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; cursor: pointer; border: 1px solid rgba(196,169,110,0.3); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+        .animation-release:hover { background: rgba(15,16,20,0.9); }
+        .animation-embed.is-active .animation-shield { display: none; }
+        .animation-embed.is-active .animation-release { display: inline-flex; }
+
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
         .toast-in { animation: slideIn 0.3s ease-out; }
@@ -297,6 +308,18 @@
             </div>
 
             <div class="mb-6">
+                <label class="block text-sm font-medium mb-1.5 text-gray-600 dark:text-[#a09a92]">Animations (HTML / Three.js)</label>
+                <div id="animation-upload-area" class="border-2 border-dashed border-cream-200 dark:border-[#2e3038] rounded-xl p-8 text-center cursor-pointer hover:border-cream-400 dark:hover:border-[#c4a96e] transition group">
+                    <svg class="w-10 h-10 mx-auto mb-3 text-gray-400 dark:text-[#6b6760] group-hover:text-cream-500 dark:group-hover:text-[#c4a96e] transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    <p class="text-gray-500 dark:text-[#8a857e]">Drop a self-contained .html file or click to upload</p>
+                    <p class="text-xs text-gray-400 dark:text-[#6b6760] mt-1">Embedded as an interactive iframe with a tap-to-activate shield</p>
+                    <input id="animation-file-input" type="file" accept=".html,text/html" class="hidden">
+                </div>
+            </div>
+
+            <div class="mb-6">
                 <label class="block text-sm font-medium mb-1.5 text-gray-600 dark:text-[#a09a92]">Content</label>
                 <textarea id="editor-content"></textarea>
             </div>
@@ -347,6 +370,30 @@
             <div class="flex gap-4">
                 <button id="btn-cancel-image" class="flex-1 py-2.5 rounded-xl border border-cream-200 dark:border-[#2e3038] hover:bg-cream-100 dark:hover:bg-[#242630] transition font-medium">Cancel</button>
                 <button id="btn-insert-image" class="flex-1 py-2.5 rounded-xl bg-cream-700 dark:bg-[#c4a96e] text-white dark:text-[#1a1b20] hover:bg-cream-800 dark:hover:bg-[#d4b86a] transition font-medium">Upload &amp; Insert</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ANIMATION EMBED MODAL ===== -->
+    <div id="modal-animation" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#1e1f26] rounded-2xl p-8 max-w-lg w-full border border-cream-200 dark:border-[#2e3038] shadow-2xl">
+            <h3 class="text-lg font-bold mb-2">Embed Animation</h3>
+            <p id="animation-filename" class="text-sm text-gray-500 dark:text-[#8a857e] mb-6 truncate"></p>
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium mb-1.5 text-gray-600 dark:text-[#a09a92]" for="animation-label-input">Label (shown on the tap-to-activate overlay)</label>
+                    <input id="animation-label-input" type="text" placeholder="Tap to interact"
+                        class="w-full px-4 py-2.5 rounded-xl border border-cream-200 dark:border-[#2e3038] bg-cream-50 dark:bg-[#16171c] focus:outline-none focus:ring-2 focus:ring-cream-400 dark:focus:ring-[#c4a96e]">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5 text-gray-600 dark:text-[#a09a92]" for="animation-height-input">Height (px)</label>
+                    <input id="animation-height-input" type="number" min="120" max="1200" value="420"
+                        class="w-full px-4 py-2.5 rounded-xl border border-cream-200 dark:border-[#2e3038] bg-cream-50 dark:bg-[#16171c] focus:outline-none focus:ring-2 focus:ring-cream-400 dark:focus:ring-[#c4a96e]">
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <button id="btn-cancel-animation" class="flex-1 py-2.5 rounded-xl border border-cream-200 dark:border-[#2e3038] hover:bg-cream-100 dark:hover:bg-[#242630] transition font-medium">Cancel</button>
+                <button id="btn-insert-animation" class="flex-1 py-2.5 rounded-xl bg-cream-700 dark:bg-[#c4a96e] text-white dark:text-[#1a1b20] hover:bg-cream-800 dark:hover:bg-[#d4b86a] transition font-medium">Upload &amp; Insert</button>
             </div>
         </div>
     </div>

@@ -176,6 +176,7 @@ class BlogPostPage {
         const bodyElement = document.getElementById('post-body');
         if (bodyElement) {
             bodyElement.innerHTML = this.renderMarkdownContent(this.post.content);
+            this.enhanceAnimations(bodyElement);
         }
         
         // Update footer
@@ -312,6 +313,43 @@ class BlogPostPage {
         } else {
             return `${minutes} min read`;
         }
+    }
+
+    enhanceAnimations(root) {
+        const embeds = root.querySelectorAll('.animation-embed');
+        embeds.forEach(embed => {
+            if (embed.dataset.enhanced === '1') return;
+            embed.dataset.enhanced = '1';
+
+            const label = embed.dataset.animLabel || 'Tap to interact';
+
+            const shield = document.createElement('div');
+            shield.className = 'animation-shield';
+            shield.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"></polygon></svg>
+                <span>${this.escapeHtml(label)}</span>
+            `;
+
+            const release = document.createElement('button');
+            release.type = 'button';
+            release.className = 'animation-release';
+            release.setAttribute('aria-label', 'Release animation (re-enable scroll)');
+            release.innerHTML = `
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <span>Done</span>
+            `;
+
+            shield.addEventListener('click', () => {
+                embed.classList.add('is-active');
+            });
+            release.addEventListener('click', (e) => {
+                e.stopPropagation();
+                embed.classList.remove('is-active');
+            });
+
+            embed.appendChild(shield);
+            embed.appendChild(release);
+        });
     }
 
     escapeHtml(unsafe) {

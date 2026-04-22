@@ -195,6 +195,7 @@ class AdminApp {
         this.editor = null;
         this.pendingImageFile = null;
         this.pendingImageDataUrl = null;
+        this.pendingAnimationFile = null;
         this.deleteTargetId = null;
         this.saving = false;
 
@@ -710,6 +711,77 @@ class AdminApp {
         });
     }
 
+    // ---- Animation Upload ----
+
+    handleAnimationFile(file) {
+        if (!file) return;
+        const isHtml = file.type === 'text/html' || /\.html?$/i.test(file.name);
+        if (!isHtml) {
+            this.showToast('Animation must be an .html file', 'error');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            this.showToast('Animation file too large (max 5MB)', 'error');
+            return;
+        }
+        this.pendingAnimationFile = file;
+        document.getElementById('animation-filename').textContent = file.name;
+        document.getElementById('animation-label-input').value = 'Tap to interact';
+        document.getElementById('animation-height-input').value = '420';
+        document.getElementById('modal-animation').classList.remove('hidden');
+        setTimeout(() => document.getElementById('animation-label-input').focus(), 100);
+    }
+
+    async insertAnimation() {
+        const file = this.pendingAnimationFile;
+        if (!file) return;
+
+        const label = (document.getElementById('animation-label-input').value || 'Tap to interact').trim();
+        let height = parseInt(document.getElementById('animation-height-input').value, 10);
+        if (!height || height < 120) height = 420;
+        if (height > 1200) height = 1200;
+
+        document.getElementById('modal-animation').classList.add('hidden');
+        this.showLoading('Uploading animation...');
+
+        try {
+            const text = await file.text();
+            const base64 = utf8ToBase64(text);
+
+            const ts = Date.now();
+            const safeName = file.name.toLowerCase().replace(/\.html?$/i, '').replace(/[^a-z0-9.-]/g, '-');
+            const path = `blog-animations/${ts}-${safeName}.html`;
+
+            await this.github.commitFiles(
+                [{ path, content: base64, encoding: 'base64' }],
+                `Upload animation: ${file.name}`
+            );
+
+            const snippet = this.buildAnimationSnippet(path, label, height);
+            if (this.editor) {
+                const cm = this.editor.codemirror;
+                cm.replaceSelection(`\n\n${snippet}\n\n`);
+                cm.focus();
+            }
+
+            this.hideLoading();
+            this.showToast('Animation uploaded!', 'success');
+        } catch (err) {
+            this.hideLoading();
+            this.showToast('Animation upload failed: ' + err.message, 'error');
+        } finally {
+            this.pendingAnimationFile = null;
+        }
+    }
+
+    buildAnimationSnippet(path, label, height) {
+        const safeLabel = escapeHtml(label);
+        const safePath = escapeHtml(path);
+        return `<div class="animation-embed" data-anim-label="${safeLabel}" style="position:relative;margin:2rem 0;border-radius:10px;overflow:hidden;border:1px solid rgba(160,125,46,0.2);">
+  <iframe src="${safePath}" loading="lazy" style="width:100%;height:${height}px;border:0;display:block;background:#0f1014;"></iframe>
+</div>`;
+    }
+
     // ---- Preview ----
 
     showPreview() {
@@ -730,11 +802,38 @@ class AdminApp {
 
             let html = `<h1>${escapeHtml(title)}</h1>` + marked.parse(content.trim());
             html = html.replace(/src="blog-images\//g, `src="${repoBase}blog-images/`);
-            document.getElementById('preview-body').innerHTML = html;
+            const previewBody = document.getElementById('preview-body');
+            previewBody.innerHTML = html;
+            this.enhanceAnimations(previewBody);
         }
 
         document.getElementById('modal-preview').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
+    }
+
+    enhanceAnimations(root) {
+        root.querySelectorAll('.animation-embed').forEach(embed => {
+            if (embed.dataset.enhanced === '1') return;
+            embed.dataset.enhanced = '1';
+
+            const label = embed.dataset.animLabel || 'Tap to interact';
+
+            const shield = document.createElement('div');
+            shield.className = 'animation-shield';
+            shield.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg><span>${escapeHtml(label)}</span>`;
+
+            const release = document.createElement('button');
+            release.type = 'button';
+            release.className = 'animation-release';
+            release.setAttribute('aria-label', 'Release animation');
+            release.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>Done</span>`;
+
+            shield.addEventListener('click', () => embed.classList.add('is-active'));
+            release.addEventListener('click', (e) => { e.stopPropagation(); embed.classList.remove('is-active'); });
+
+            embed.appendChild(shield);
+            embed.appendChild(release);
+        });
     }
 
     hidePreview() {
@@ -842,6 +941,36 @@ class AdminApp {
             this.handleImageFiles(e.dataTransfer.files);
         });
 
+        // Animation upload area
+        const animArea = document.getElementById('animation-upload-area');
+        const animInput = document.getElementById('animation-file-input');
+
+        animArea.addEventListener('click', () => animInput.click());
+        animInput.addEventListener('change', (e) => {
+            this.handleAnimationFile(e.target.files[0]);
+            animInput.value = '';
+        });
+
+        animArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            animArea.classList.add('border-cream-400', 'dark:border-[#c4a96e]');
+        });
+        animArea.addEventListener('dragleave', () => {
+            animArea.classList.remove('border-cream-400', 'dark:border-[#c4a96e]');
+        });
+        animArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            animArea.classList.remove('border-cream-400', 'dark:border-[#c4a96e]');
+            this.handleAnimationFile(e.dataTransfer.files[0]);
+        });
+
+        // Animation embed modal
+        document.getElementById('btn-insert-animation').addEventListener('click', () => this.insertAnimation());
+        document.getElementById('btn-cancel-animation').addEventListener('click', () => {
+            document.getElementById('modal-animation').classList.add('hidden');
+            this.pendingAnimationFile = null;
+        });
+
         // Image alt-text modal
         document.getElementById('btn-insert-image').addEventListener('click', () => this.insertImageWithAlt());
         document.getElementById('btn-cancel-image').addEventListener('click', () => {
@@ -872,6 +1001,7 @@ class AdminApp {
                 this.hidePreview();
                 document.getElementById('modal-delete').classList.add('hidden');
                 document.getElementById('modal-image-alt').classList.add('hidden');
+                document.getElementById('modal-animation').classList.add('hidden');
             }
         });
     }
