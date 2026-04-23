@@ -9,6 +9,11 @@
       "name": "Business",
       "description": "Posts about business",
       "color": "gray"
+    },
+    "inventing the universe": {
+      "name": "Inventing the universe",
+      "description": "Posts about inventing the universe",
+      "color": "gray"
     }
   },
   "posts": [
@@ -26,6 +31,13 @@
       "id": "blog1",
       "category": "business",
       "file": "static-blog/business/blog1.txt"
+    }
+  ],
+  "drafts": [
+    {
+      "id": "through-the-lens-of-the-lens",
+      "category": "inventing the universe",
+      "file": "static-blog/inventing the universe/through-the-lens-of-the-lens.txt"
     }
   ]
 }

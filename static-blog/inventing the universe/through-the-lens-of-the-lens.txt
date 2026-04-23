@@ -1,0 +1,16 @@
+---
+title: "Through the Lens of the Lens"
+excerpt: 
+category: "Inventing the universe"
+date: 2026-04-23
+readTime: "1 min read"
+tags: []
+---
+
+> Vision is the most important sense of human beings, and by extension for Autonomous Robots or AI. It is due to the lack of extensive vision training of AI on why we still do not have AGI and also the reason for the recent push towards collecting a lot of visual data to train world models (Models which can simulate the physical reality!). In this blog, we'll unwrap vision from the very basics and understand the physics behind image formation. In subsequent blogs, we'll dive into more practical examples of camera calibration, image signal processing, etcetera.
+
+# Introduction
+
+Let us put on our *first-principles thinking* hat and try and figure ourselves on how we would like to capture an image. Ideally for any first principles thinking we should start with the *"why"* we want to capture an image, but to avoid digging the past just keep your own personal motivation in mind (which could be, for training AGI, or perhaps just to capture your cute little dog). 
+
+I am going to assume that you know basic elementary physics on reflection and refraction of light. If not
