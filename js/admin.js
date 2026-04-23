@@ -283,9 +283,10 @@ class AdminApp {
             const contents = await this.github.getContents('blog-index.json');
             const raw = base64ToUtf8(contents.content.replace(/\s/g, ''));
             this.blogIndex = JSON.parse(raw);
+            if (!Array.isArray(this.blogIndex.drafts)) this.blogIndex.drafts = [];
 
             this.posts = [];
-            for (const entry of this.blogIndex.posts) {
+            const loadEntry = async (entry, isDraft) => {
                 try {
                     const file = await this.github.getContents(entry.file);
                     const md = base64ToUtf8(file.content.replace(/\s/g, ''));
@@ -295,6 +296,7 @@ class AdminApp {
                         category: entry.category,
                         file: entry.file,
                         sha: file.sha,
+                        _isDraft: isDraft,
                         ...parsed.frontmatter,
                         content: parsed.content,
                     });
@@ -307,15 +309,19 @@ class AdminApp {
                         title: entry.id,
                         date: '',
                         content: '',
+                        _isDraft: isDraft,
                         _loadError: true,
                     });
                 }
-            }
+            };
+
+            for (const entry of this.blogIndex.posts) await loadEntry(entry, false);
+            for (const entry of this.blogIndex.drafts) await loadEntry(entry, true);
             this.hideLoading();
         } catch (err) {
             this.hideLoading();
             if (err.message && (err.message.includes('Not Found') || err.message.includes('404'))) {
-                this.blogIndex = { categories: {}, posts: [] };
+                this.blogIndex = { categories: {}, posts: [], drafts: [] };
                 this.posts = [];
             } else {
                 this.showToast('Failed to load posts: ' + err.message, 'error');
@@ -328,10 +334,17 @@ class AdminApp {
         const empty = document.getElementById('posts-empty');
         const search = (document.getElementById('dashboard-search').value || '').toLowerCase().trim();
         const catFilter = document.getElementById('dashboard-filter').value;
+        const statusEl = document.getElementById('dashboard-status');
+        const statusFilter = statusEl ? statusEl.value : 'all';
 
         let filtered = this.posts;
         if (catFilter && catFilter !== 'all') {
             filtered = filtered.filter(p => p.category === catFilter);
+        }
+        if (statusFilter === 'published') {
+            filtered = filtered.filter(p => !p._isDraft);
+        } else if (statusFilter === 'drafts') {
+            filtered = filtered.filter(p => p._isDraft);
         }
         if (search) {
             filtered = filtered.filter(p =>
@@ -357,6 +370,11 @@ class AdminApp {
                 <td class="px-6 py-4 hidden sm:table-cell">
                     <span class="text-xs px-2.5 py-1 bg-cream-100 dark:bg-[#242630] text-cream-700 dark:text-[#a09a92] rounded-full">${escapeHtml(post.category)}</span>
                 </td>
+                <td class="px-6 py-4">
+                    ${post._isDraft
+                        ? `<span class="text-xs px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Draft</span>`
+                        : `<span class="text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Published</span>`}
+                </td>
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-[#8a857e] hidden md:table-cell">${formatDate(post.date)}</td>
                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-[#8a857e] hidden md:table-cell">${escapeHtml(post.readTime || '')}</td>
                 <td class="px-6 py-4 text-right">
@@ -381,11 +399,12 @@ class AdminApp {
     }
 
     updateStats() {
-        document.getElementById('stat-posts').textContent = this.posts.length;
-        const categories = new Set(this.posts.map(p => p.category));
+        const published = this.posts.filter(p => !p._isDraft);
+        document.getElementById('stat-posts').textContent = published.length;
+        const categories = new Set(published.map(p => p.category));
         document.getElementById('stat-categories').textContent = categories.size;
-        if (this.posts.length > 0) {
-            const sorted = [...this.posts].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+        if (published.length > 0) {
+            const sorted = [...published].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
             document.getElementById('stat-latest').textContent = sorted[0].title || sorted[0].id;
         } else {
             document.getElementById('stat-latest').textContent = '--';
@@ -404,13 +423,14 @@ class AdminApp {
     showEditor(postId = null) {
         this.showView('editor');
 
+        const statusEl = document.getElementById('editor-status');
         if (postId) {
             this.editingPost = this.posts.find(p => p.id === postId) || null;
-            document.getElementById('editor-status').textContent = 'Editing';
+            if (statusEl) statusEl.textContent = this.editingPost && this.editingPost._isDraft ? 'Editing draft' : 'Editing';
             if (this.editingPost) this.populateEditor(this.editingPost);
         } else {
             this.editingPost = null;
-            document.getElementById('editor-status').textContent = 'New Post';
+            if (statusEl) statusEl.textContent = 'New Post';
             this.clearEditor();
         }
 
@@ -490,7 +510,7 @@ class AdminApp {
 
     // ---- Save ----
 
-    async savePost() {
+    async savePost(asDraft = false) {
         if (this.saving) return;
 
         const title = document.getElementById('editor-title').value.trim();
@@ -517,7 +537,7 @@ class AdminApp {
         const filePath = `static-blog/${category}/${slug}.txt`;
 
         this.saving = true;
-        this.showLoading('Publishing...');
+        this.showLoading(asDraft ? 'Saving draft...' : 'Publishing...');
 
         try {
             const files = [{ path: filePath, content: fullContent }];
@@ -526,17 +546,25 @@ class AdminApp {
                 files.push({ path: this.editingPost.file, delete: true });
             }
 
-            const updatedIndex = this.buildUpdatedIndex(slug, category, filePath);
+            const updatedIndex = this.buildUpdatedIndex(slug, category, filePath, asDraft);
             files.push({ path: 'blog-index.json', content: JSON.stringify(updatedIndex, null, 2) });
 
-            const msg = this.editingPost
-                ? `Update blog post: ${title}`
-                : `Add blog post: ${title}`;
+            const wasDraft = this.editingPost && this.editingPost._isDraft;
+            let msg;
+            if (!this.editingPost) {
+                msg = asDraft ? `Save draft: ${title}` : `Add blog post: ${title}`;
+            } else if (wasDraft && !asDraft) {
+                msg = `Publish blog post: ${title}`;
+            } else if (!wasDraft && asDraft) {
+                msg = `Unpublish to draft: ${title}`;
+            } else {
+                msg = asDraft ? `Update draft: ${title}` : `Update blog post: ${title}`;
+            }
 
             await this.github.commitFiles(files, msg);
 
             this.hideLoading();
-            this.showToast('Post published! Site will update in ~1 min.', 'success');
+            this.showToast(asDraft ? 'Draft saved.' : 'Post published! Site will update in ~1 min.', 'success');
 
             this.destroyEditor();
             localStorage.removeItem('smde_admin-blog-editor');
@@ -544,19 +572,30 @@ class AdminApp {
             await this.showDashboard();
         } catch (err) {
             this.hideLoading();
-            this.showToast('Publish failed: ' + err.message, 'error');
+            this.showToast((asDraft ? 'Save failed: ' : 'Publish failed: ') + err.message, 'error');
         } finally {
             this.saving = false;
         }
     }
 
-    buildUpdatedIndex(slug, category, filePath) {
+    buildUpdatedIndex(slug, category, filePath, asDraft = false) {
         const index = this.blogIndex
             ? JSON.parse(JSON.stringify(this.blogIndex))
-            : { categories: {}, posts: [] };
+            : { categories: {}, posts: [], drafts: [] };
 
+        if (!Array.isArray(index.posts)) index.posts = [];
+        if (!Array.isArray(index.drafts)) index.drafts = [];
+
+        // Remove this slug from both arrays (handles drafts <-> published transitions)
         index.posts = index.posts.filter(p => p.id !== slug);
-        index.posts.unshift({ id: slug, category, file: filePath });
+        index.drafts = index.drafts.filter(p => p.id !== slug);
+
+        const entry = { id: slug, category, file: filePath };
+        if (asDraft) {
+            index.drafts.unshift(entry);
+        } else {
+            index.posts.unshift(entry);
+        }
 
         if (!index.categories[category]) {
             index.categories[category] = {
@@ -589,9 +628,13 @@ class AdminApp {
 
         try {
             const updatedIndex = JSON.parse(JSON.stringify(this.blogIndex));
+            if (!Array.isArray(updatedIndex.drafts)) updatedIndex.drafts = [];
             updatedIndex.posts = updatedIndex.posts.filter(p => p.id !== post.id);
+            updatedIndex.drafts = updatedIndex.drafts.filter(p => p.id !== post.id);
 
-            const catStillUsed = updatedIndex.posts.some(p => p.category === post.category);
+            const catStillUsed =
+                updatedIndex.posts.some(p => p.category === post.category) ||
+                updatedIndex.drafts.some(p => p.category === post.category);
             if (!catStillUsed) {
                 delete updatedIndex.categories[post.category];
             }
@@ -599,7 +642,7 @@ class AdminApp {
             await this.github.commitFiles([
                 { path: post.file, delete: true },
                 { path: 'blog-index.json', content: JSON.stringify(updatedIndex, null, 2) },
-            ], `Delete blog post: ${post.title || post.id}`);
+            ], `Delete ${post._isDraft ? 'draft' : 'blog post'}: ${post.title || post.id}`);
 
             this.hideLoading();
             this.showToast('Post deleted. Site will update in ~1 min.', 'success');
@@ -782,6 +825,167 @@ class AdminApp {
 </div>`;
     }
 
+    // ---- Media Library ----
+
+    async listDirectory(path) {
+        try {
+            const result = await this.github.getContents(path);
+            return Array.isArray(result) ? result : [];
+        } catch (err) {
+            if (err.message && (err.message.includes('Not Found') || err.message.includes('404'))) {
+                return [];
+            }
+            throw err;
+        }
+    }
+
+    collectMediaReferences() {
+        const refs = new Set();
+        for (const post of this.posts) {
+            const text = post.content || '';
+            const re = /(?:blog-images|blog-animations)\/[A-Za-z0-9._\-\/]+/g;
+            const matches = text.match(re);
+            if (matches) matches.forEach(m => refs.add(m));
+        }
+        return refs;
+    }
+
+    async showMedia() {
+        const modal = document.getElementById('modal-media');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        const body = document.getElementById('media-body');
+        body.innerHTML = `<p class="text-center text-gray-500 dark:text-[#8a857e] py-12">Scanning repository...</p>`;
+
+        try {
+            const [images, animations] = await Promise.all([
+                this.listDirectory('blog-images'),
+                this.listDirectory('blog-animations'),
+            ]);
+
+            const files = [
+                ...images.filter(f => f.type === 'file').map(f => ({ ...f, kind: 'image' })),
+                ...animations.filter(f => f.type === 'file').map(f => ({ ...f, kind: 'animation' })),
+            ];
+
+            const refs = this.collectMediaReferences();
+            this.mediaFiles = files.map(f => ({
+                path: f.path,
+                name: f.name,
+                size: f.size,
+                sha: f.sha,
+                kind: f.kind,
+                used: refs.has(f.path),
+            }));
+
+            this.renderMedia();
+        } catch (err) {
+            body.innerHTML = `<p class="text-center text-red-500 py-12">Failed to load media: ${escapeHtml(err.message)}</p>`;
+        }
+    }
+
+    renderMedia() {
+        const body = document.getElementById('media-body');
+        const summary = document.getElementById('media-summary');
+        const cleanupBtn = document.getElementById('btn-media-cleanup');
+        const unusedOnly = document.getElementById('media-unused-only').checked;
+
+        const files = this.mediaFiles || [];
+        const total = files.length;
+        const unusedCount = files.filter(f => !f.used).length;
+
+        summary.textContent = `${total} file${total === 1 ? '' : 's'} · ${unusedCount} unused`;
+        cleanupBtn.disabled = unusedCount === 0;
+        cleanupBtn.textContent = unusedCount > 0 ? `Delete all unused (${unusedCount})` : 'Delete all unused';
+
+        const shown = unusedOnly ? files.filter(f => !f.used) : files;
+
+        if (shown.length === 0) {
+            body.innerHTML = `<p class="text-center text-gray-500 dark:text-[#8a857e] py-12">${unusedOnly ? 'No unused files.' : 'No media files yet.'}</p>`;
+            return;
+        }
+
+        const repoBase = `https://raw.githubusercontent.com/${ADMIN_CONFIG.repoOwner}/${ADMIN_CONFIG.repoName}/${ADMIN_CONFIG.branch}/`;
+
+        body.innerHTML = `<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">` +
+            shown.map(f => {
+                const preview = f.kind === 'image'
+                    ? `<img src="${repoBase}${encodeURI(f.path)}" loading="lazy" class="w-full h-28 object-cover rounded-lg bg-cream-100 dark:bg-[#16171c]" alt="">`
+                    : `<div class="w-full h-28 rounded-lg bg-[#0f1014] flex items-center justify-center text-[#d4b86a] text-xs font-mono">HTML / anim</div>`;
+                const badge = f.used
+                    ? `<span class="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Used</span>`
+                    : `<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Unused</span>`;
+                const sizeKb = f.size ? `${Math.max(1, Math.round(f.size / 1024))} KB` : '';
+                return `
+                    <div class="group relative bg-cream-50 dark:bg-[#16171c] border border-cream-200 dark:border-[#2e3038] rounded-xl p-2">
+                        ${preview}
+                        <div class="mt-2 flex items-center justify-between gap-2">
+                            ${badge}
+                            <span class="text-[11px] text-gray-500 dark:text-[#8a857e]">${sizeKb}</span>
+                        </div>
+                        <div class="mt-1 text-[11px] font-mono truncate text-gray-600 dark:text-[#a09a92]" title="${escapeHtml(f.path)}">${escapeHtml(f.name)}</div>
+                        <button class="btn-media-delete mt-2 w-full py-1.5 rounded-lg text-xs font-medium ${f.used ? 'bg-cream-100 dark:bg-[#242630] text-gray-500 dark:text-[#8a857e]' : 'bg-red-600 hover:bg-red-700 text-white'} transition"
+                            data-path="${escapeHtml(f.path)}" ${f.used ? 'data-used="1"' : ''}>
+                            Delete
+                        </button>
+                    </div>`;
+            }).join('') + `</div>`;
+
+        body.querySelectorAll('.btn-media-delete').forEach(btn => {
+            btn.addEventListener('click', () => this.deleteMediaFile(btn.dataset.path, btn.dataset.used === '1'));
+        });
+    }
+
+    async deleteMediaFile(path, used) {
+        const warn = used
+            ? `"${path}" appears to be used in a post. Delete anyway?`
+            : `Delete "${path}"?`;
+        if (!confirm(warn)) return;
+
+        this.showLoading('Deleting...');
+        try {
+            await this.github.commitFiles(
+                [{ path, delete: true }],
+                `Delete unused media: ${path}`
+            );
+            this.mediaFiles = (this.mediaFiles || []).filter(f => f.path !== path);
+            this.hideLoading();
+            this.showToast('File deleted.', 'success');
+            this.renderMedia();
+        } catch (err) {
+            this.hideLoading();
+            this.showToast('Delete failed: ' + err.message, 'error');
+        }
+    }
+
+    async deleteAllUnusedMedia() {
+        const unused = (this.mediaFiles || []).filter(f => !f.used);
+        if (unused.length === 0) return;
+        if (!confirm(`Delete ${unused.length} unused file${unused.length === 1 ? '' : 's'}?`)) return;
+
+        this.showLoading(`Deleting ${unused.length} files...`);
+        try {
+            await this.github.commitFiles(
+                unused.map(f => ({ path: f.path, delete: true })),
+                `Delete ${unused.length} unused media file${unused.length === 1 ? '' : 's'}`
+            );
+            const removed = new Set(unused.map(f => f.path));
+            this.mediaFiles = (this.mediaFiles || []).filter(f => !removed.has(f.path));
+            this.hideLoading();
+            this.showToast(`Deleted ${unused.length} file${unused.length === 1 ? '' : 's'}.`, 'success');
+            this.renderMedia();
+        } catch (err) {
+            this.hideLoading();
+            this.showToast('Cleanup failed: ' + err.message, 'error');
+        }
+    }
+
+    hideMedia() {
+        document.getElementById('modal-media').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
     // ---- Preview ----
 
     showPreview() {
@@ -901,13 +1105,19 @@ class AdminApp {
         document.getElementById('btn-theme-toggle').addEventListener('click', () => this.toggleTheme());
         document.getElementById('dashboard-search').addEventListener('input', () => this.renderPosts());
         document.getElementById('dashboard-filter').addEventListener('change', () => this.renderPosts());
+        const statusSel = document.getElementById('dashboard-status');
+        if (statusSel) statusSel.addEventListener('change', () => this.renderPosts());
+        const mediaBtn = document.getElementById('btn-media');
+        if (mediaBtn) mediaBtn.addEventListener('click', () => this.showMedia());
 
         // Editor navigation
         document.getElementById('btn-back').addEventListener('click', async () => {
             this.destroyEditor();
             await this.showDashboard();
         });
-        document.getElementById('btn-save').addEventListener('click', () => this.savePost());
+        document.getElementById('btn-save').addEventListener('click', () => this.savePost(false));
+        const draftBtn = document.getElementById('btn-save-draft');
+        if (draftBtn) draftBtn.addEventListener('click', () => this.savePost(true));
         document.getElementById('btn-preview').addEventListener('click', () => this.showPreview());
 
         // Category new toggle
@@ -988,6 +1198,18 @@ class AdminApp {
             if (e.target === document.getElementById('modal-preview')) this.hidePreview();
         });
 
+        // Media modal
+        const mediaCloseBtn = document.getElementById('btn-close-media');
+        if (mediaCloseBtn) mediaCloseBtn.addEventListener('click', () => this.hideMedia());
+        const mediaModal = document.getElementById('modal-media');
+        if (mediaModal) mediaModal.addEventListener('click', (e) => {
+            if (e.target === mediaModal) this.hideMedia();
+        });
+        const cleanupBtn = document.getElementById('btn-media-cleanup');
+        if (cleanupBtn) cleanupBtn.addEventListener('click', () => this.deleteAllUnusedMedia());
+        const unusedToggle = document.getElementById('media-unused-only');
+        if (unusedToggle) unusedToggle.addEventListener('change', () => this.renderMedia());
+
         // Delete modal
         document.getElementById('btn-confirm-delete').addEventListener('click', () => this.executeDelete());
         document.getElementById('btn-cancel-delete').addEventListener('click', () => {
@@ -999,6 +1221,7 @@ class AdminApp {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.hidePreview();
+                this.hideMedia();
                 document.getElementById('modal-delete').classList.add('hidden');
                 document.getElementById('modal-image-alt').classList.add('hidden');
                 document.getElementById('modal-animation').classList.add('hidden');
