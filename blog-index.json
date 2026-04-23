@@ -14,6 +14,11 @@
       "name": "Inventing the universe",
       "description": "Posts about inventing the universe",
       "color": "gray"
+    },
+    "Inventing the universe": {
+      "name": "Inventing the universe",
+      "description": "Posts about Inventing the universe",
+      "color": "gray"
     }
   },
   "posts": [
@@ -36,8 +41,8 @@
   "drafts": [
     {
       "id": "through-the-lens-of-the-lens",
-      "category": "inventing the universe",
-      "file": "static-blog/inventing the universe/through-the-lens-of-the-lens.txt"
+      "category": "Inventing the universe",
+      "file": "static-blog/Inventing the universe/through-the-lens-of-the-lens.txt"
     }
   ]
 }
