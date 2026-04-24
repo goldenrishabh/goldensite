@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reflection & Refraction</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: #faf9f7; color: #2e230d;
+  }
+  .wrap { display: flex; flex-direction: column; height: 100%; padding: 12px 16px; gap: 10px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 13px; }
+  .mode {
+    display: inline-flex; border: 1px solid #d4c5ab;
+    border-radius: 8px; overflow: hidden; background: #fff;
+  }
+  .mode button {
+    border: 0; background: transparent; padding: 6px 12px;
+    font: inherit; cursor: pointer; color: #5a451a;
+  }
+  .mode button.active { background: #a07d2e; color: #fff; }
+  .slider { display: flex; align-items: center; gap: 8px; min-width: 210px; }
+  .slider label { white-space: nowrap; }
+  .slider input[type=range] { flex: 1; accent-color: #a07d2e; }
+  .slider .val {
+    font-variant-numeric: tabular-nums; min-width: 44px;
+    text-align: right; color: #8a6b28;
+  }
+  canvas {
+    flex: 1; width: 100%; display: block;
+    background: #f5f0e8; border-radius: 8px; cursor: grab;
+    touch-action: none; user-select: none;
+  }
+  canvas.dragging { cursor: grabbing; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #5a451a; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { display: inline-block; width: 16px; height: 2px; }
+  .readout { font-variant-numeric: tabular-nums; color: #6b7a88; margin-left: auto; font-size: 12px; }
+  @media (max-width: 520px) { .slider { min-width: 100%; } .readout { margin-left: 0; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="controls">
+    <div class="mode" id="mode">
+      <button data-mode="reflect" class="active">Reflection</button>
+      <button data-mode="refract">Refraction</button>
+    </div>
+    <div class="slider">
+      <label>Angle &theta;&#8321;</label>
+      <input id="angle" type="range" min="1" max="89" value="35">
+      <span class="val" id="angleVal">35&deg;</span>
+    </div>
+    <div class="slider" id="nWrap" style="display:none">
+      <label>n&#8322; / n&#8321;</label>
+      <input id="nratio" type="range" min="0.5" max="2.5" step="0.01" value="1.50">
+      <span class="val" id="nVal">1.50</span>
+    </div>
+    <span class="readout" id="readout"></span>
+  </div>
+  <canvas id="c"></canvas>
+  <div class="legend">
+    <span><i style="background:#d97706"></i>incident / reflected</span>
+    <span id="legendRefr" style="display:none"><i style="background:#2563eb"></i>refracted</span>
+    <span><i style="background:#9ca3af"></i>normal (dashed)</span>
+    <span style="color:#8a6b28">drag the orange dot, or use the sliders</span>
+  </div>
+</div>
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const angleEl = document.getElementById('angle');
+  const angleVal = document.getElementById('angleVal');
+  const nEl = document.getElementById('nratio');
+  const nVal = document.getElementById('nVal');
+  const nWrap = document.getElementById('nWrap');
+  const legendRefr = document.getElementById('legendRefr');
+  const modeEl = document.getElementById('mode');
+  const readout = document.getElementById('readout');
+
+  let mode = 'reflect';
+  let theta1 = 35 * Math.PI / 180;
+  let n = 1.5;
+  let dragging = false;
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  function drawRay(x1, y1, x2, y2, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const ang = Math.atan2(y2 - y1, x2 - x1);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(mx + Math.cos(ang) * 8, my + Math.sin(ang) * 8);
+    ctx.lineTo(mx + Math.cos(ang + 2.6) * 8, my + Math.sin(ang + 2.6) * 8);
+    ctx.lineTo(mx + Math.cos(ang - 2.6) * 8, my + Math.sin(ang - 2.6) * 8);
+    ctx.closePath(); ctx.fill();
+  }
+
+  function drawArc(cx, cy, from, to, r, color, label) {
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, from, to, to < from);
+    ctx.stroke();
+    const mid = (from + to) / 2;
+    ctx.fillStyle = color;
+    ctx.font = '600 13px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, cx + Math.cos(mid) * (r + 16), cy + Math.sin(mid) * (r + 16));
+  }
+
+  function draw() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+    const cx = w / 2, cy = h / 2;
+    const R = Math.min(w, h) * 0.42;
+
+    if (mode === 'refract') {
+      ctx.fillStyle = n >= 1 ? '#dfecf6' : '#fff1d6';
+      ctx.fillRect(0, cy, w, h - cy);
+      ctx.fillStyle = '#6b7a88';
+      ctx.font = '12px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('medium 1 (n₁) — air', 12, cy - 10);
+      ctx.fillText('medium 2 (n₂) ' + (n >= 1 ? '— denser, e.g. glass' : '— less dense'), 12, cy + 18);
+    } else {
+      ctx.fillStyle = '#e8dfd2';
+      ctx.fillRect(0, cy, w, h - cy);
+      ctx.strokeStyle = '#a07d2e'; ctx.lineWidth = 1;
+      for (let x = -h; x < w; x += 10) {
+        ctx.beginPath(); ctx.moveTo(x, cy); ctx.lineTo(x + (h - cy), h); ctx.stroke();
+      }
+      ctx.fillStyle = '#6b7a88';
+      ctx.font = '12px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('air', 12, cy - 10);
+      ctx.fillText('perfect mirror', 12, cy + 18);
+    }
+
+    ctx.strokeStyle = '#8a6b28'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+
+    ctx.save();
+    ctx.setLineDash([6, 6]);
+    ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - R * 1.08); ctx.lineTo(cx, cy + R * 1.08);
+    ctx.stroke();
+    ctx.restore();
+
+    const ix = cx - Math.sin(theta1) * R;
+    const iy = cy - Math.cos(theta1) * R;
+    drawRay(ix, iy, cx, cy, '#d97706');
+    drawArc(cx, cy, -Math.PI / 2, -Math.PI / 2 - theta1, R * 0.28, '#d97706', 'θ₁');
+
+    let info = '';
+    if (mode === 'reflect') {
+      const rx = cx + Math.sin(theta1) * R;
+      const ry = cy - Math.cos(theta1) * R;
+      drawRay(cx, cy, rx, ry, '#d97706');
+      drawArc(cx, cy, -Math.PI / 2, -Math.PI / 2 + theta1, R * 0.28, '#d97706', 'θ₁');
+      info = 'θᵢ = θᵣ = ' + (theta1 * 180 / Math.PI).toFixed(0) + '°';
+    } else {
+      const sinT2 = Math.sin(theta1) / n;
+      if (Math.abs(sinT2) > 1) {
+        const rx = cx + Math.sin(theta1) * R;
+        const ry = cy - Math.cos(theta1) * R;
+        drawRay(cx, cy, rx, ry, '#d97706');
+        ctx.fillStyle = '#b91c1c';
+        ctx.textAlign = 'center';
+        ctx.font = '600 13px Inter, system-ui, sans-serif';
+        ctx.fillText('total internal reflection', cx, cy + R * 0.55);
+        info = 'θ₁ > θ_c — total internal reflection';
+      } else {
+        const theta2 = Math.asin(sinT2);
+        const tx = cx + Math.sin(theta2) * R;
+        const ty = cy + Math.cos(theta2) * R;
+        drawRay(cx, cy, tx, ty, '#2563eb');
+        drawArc(cx, cy, Math.PI / 2, Math.PI / 2 - theta2, R * 0.28, '#2563eb', 'θ₂');
+        info = 'n₁ sin θ₁ = n₂ sin θ₂  →  θ₂ = ' + (theta2 * 180 / Math.PI).toFixed(1) + '°';
+      }
+    }
+    readout.textContent = info;
+
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(ix, iy, 7, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+  }
+
+  function updateFromPointer(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX ?? (e.touches && e.touches[0].clientX)) - rect.left;
+    const y = (e.clientY ?? (e.touches && e.touches[0].clientY)) - rect.top;
+    const cx = rect.width / 2, cy = rect.height / 2;
+    const dx = x - cx;
+    const dy = Math.min(-1, y - cy);
+    let a = Math.abs(Math.atan2(dx, -dy));
+    a = Math.max(1 * Math.PI / 180, Math.min(89 * Math.PI / 180, a));
+    theta1 = a;
+    angleEl.value = Math.round(a * 180 / Math.PI);
+    angleVal.textContent = angleEl.value + '°';
+    draw();
+  }
+
+  canvas.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    canvas.classList.add('dragging');
+    canvas.setPointerCapture(e.pointerId);
+    updateFromPointer(e);
+  });
+  canvas.addEventListener('pointermove', (e) => { if (dragging) updateFromPointer(e); });
+  canvas.addEventListener('pointerup', () => { dragging = false; canvas.classList.remove('dragging'); });
+  canvas.addEventListener('pointercancel', () => { dragging = false; canvas.classList.remove('dragging'); });
+
+  angleEl.addEventListener('input', () => {
+    theta1 = parseFloat(angleEl.value) * Math.PI / 180;
+    angleVal.textContent = angleEl.value + '°';
+    draw();
+  });
+  nEl.addEventListener('input', () => {
+    n = parseFloat(nEl.value);
+    nVal.textContent = n.toFixed(2);
+    draw();
+  });
+  modeEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    mode = btn.dataset.mode;
+    modeEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+    nWrap.style.display = mode === 'refract' ? '' : 'none';
+    legendRefr.style.display = mode === 'refract' ? '' : 'none';
+    draw();
+  });
+
+  window.addEventListener('resize', resize);
+  resize();
+})();
+</script>
+</body>
+</html>

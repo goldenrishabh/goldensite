@@ -817,6 +817,22 @@ class AdminApp {
         }
     }
 
+    submitAnimationPaste() {
+        const ta = document.getElementById('animation-paste-input');
+        const nameEl = document.getElementById('animation-paste-filename');
+        const text = (ta && ta.value || '').trim();
+        if (!text) {
+            this.showToast('Paste some HTML first', 'error');
+            return;
+        }
+        let name = (nameEl && nameEl.value || '').trim() || 'animation.html';
+        if (!/\.html?$/i.test(name)) name += '.html';
+
+        const file = new File([text], name, { type: 'text/html' });
+        document.getElementById('modal-animation-paste').classList.add('hidden');
+        this.handleAnimationFile(file);
+    }
+
     buildAnimationSnippet(path, label, height) {
         const safeLabel = escapeHtml(label);
         const safePath = escapeHtml(path);
@@ -1181,6 +1197,23 @@ class AdminApp {
             this.pendingAnimationFile = null;
         });
 
+        // Animation paste modal
+        const pasteBtn = document.getElementById('btn-animation-paste');
+        if (pasteBtn) pasteBtn.addEventListener('click', () => {
+            const ta = document.getElementById('animation-paste-input');
+            const name = document.getElementById('animation-paste-filename');
+            if (ta) ta.value = '';
+            if (name) name.value = 'animation.html';
+            document.getElementById('modal-animation-paste').classList.remove('hidden');
+            setTimeout(() => ta && ta.focus(), 100);
+        });
+        const cancelPaste = document.getElementById('btn-cancel-animation-paste');
+        if (cancelPaste) cancelPaste.addEventListener('click', () => {
+            document.getElementById('modal-animation-paste').classList.add('hidden');
+        });
+        const confirmPaste = document.getElementById('btn-confirm-animation-paste');
+        if (confirmPaste) confirmPaste.addEventListener('click', () => this.submitAnimationPaste());
+
         // Image alt-text modal
         document.getElementById('btn-insert-image').addEventListener('click', () => this.insertImageWithAlt());
         document.getElementById('btn-cancel-image').addEventListener('click', () => {
@@ -1225,6 +1258,8 @@ class AdminApp {
                 document.getElementById('modal-delete').classList.add('hidden');
                 document.getElementById('modal-image-alt').classList.add('hidden');
                 document.getElementById('modal-animation').classList.add('hidden');
+                const pasteModal = document.getElementById('modal-animation-paste');
+                if (pasteModal) pasteModal.classList.add('hidden');
             }
         });
     }

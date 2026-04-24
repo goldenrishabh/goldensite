@@ -333,6 +333,10 @@
                     <p class="text-xs text-gray-400 dark:text-[#6b6760] mt-1">Embedded as an interactive iframe with a tap-to-activate shield</p>
                     <input id="animation-file-input" type="file" accept=".html,text/html" class="hidden">
                 </div>
+                <button type="button" id="btn-animation-paste"
+                    class="mt-2 text-xs text-cream-700 dark:text-[#c4a96e] hover:underline">
+                    or paste HTML code instead
+                </button>
             </div>
 
             <div class="mb-6">
@@ -415,6 +419,30 @@
                 <div id="media-body" class="p-6">
                     <p class="text-center text-gray-500 dark:text-[#8a857e] py-12">Loading media...</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ANIMATION PASTE MODAL ===== -->
+    <div id="modal-animation-paste" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#1e1f26] rounded-2xl p-8 max-w-2xl w-full border border-cream-200 dark:border-[#2e3038] shadow-2xl">
+            <h3 class="text-lg font-bold mb-2">Paste Animation HTML</h3>
+            <p class="text-sm text-gray-500 dark:text-[#8a857e] mb-6">Paste a self-contained HTML document. It will be uploaded to <code class="text-xs bg-cream-100 dark:bg-[#242630] px-1.5 py-0.5 rounded">blog-animations/</code> and embedded.</p>
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium mb-1.5 text-gray-600 dark:text-[#a09a92]" for="animation-paste-filename">Filename</label>
+                    <input id="animation-paste-filename" type="text" placeholder="my-animation.html" value="animation.html"
+                        class="w-full px-4 py-2.5 rounded-xl border border-cream-200 dark:border-[#2e3038] bg-cream-50 dark:bg-[#16171c] focus:outline-none focus:ring-2 focus:ring-cream-400 dark:focus:ring-[#c4a96e] font-mono text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5 text-gray-600 dark:text-[#a09a92]" for="animation-paste-input">HTML</label>
+                    <textarea id="animation-paste-input" rows="12" placeholder="<!DOCTYPE html>&#10;<html>..."
+                        class="w-full px-4 py-2.5 rounded-xl border border-cream-200 dark:border-[#2e3038] bg-cream-50 dark:bg-[#16171c] focus:outline-none focus:ring-2 focus:ring-cream-400 dark:focus:ring-[#c4a96e] font-mono text-xs resize-y"></textarea>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <button id="btn-cancel-animation-paste" class="flex-1 py-2.5 rounded-xl border border-cream-200 dark:border-[#2e3038] hover:bg-cream-100 dark:hover:bg-[#242630] transition font-medium">Cancel</button>
+                <button id="btn-confirm-animation-paste" class="flex-1 py-2.5 rounded-xl bg-cream-700 dark:bg-[#c4a96e] text-white dark:text-[#1a1b20] hover:bg-cream-800 dark:hover:bg-[#d4b86a] transition font-medium">Continue</button>
             </div>
         </div>
     </div>
