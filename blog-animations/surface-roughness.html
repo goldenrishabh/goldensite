@@ -345,12 +345,9 @@
     html += `<rect x="${cx - neckW/2 - 3}" y="${top}" width="${neckW + 6}" height="${capH}"
                    fill="#2f1547" stroke="#1c0a2c" stroke-width="0.6"/>`;
     // label text
-    html += `<text x="${cx}" y="${cy - 4}" text-anchor="middle"
+    html += `<text x="${cx}" y="${cy + 4}" text-anchor="middle"
                    fill="rgba(255,255,255,${(0.85 - roughness * 0.55).toFixed(2)})"
-                   style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;font-weight:500;">BLUE</text>`;
-    html += `<text x="${cx}" y="${cy + 12}" text-anchor="middle"
-                   fill="rgba(255,255,255,${(0.85 - roughness * 0.55).toFixed(2)})"
-                   style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;font-weight:500;">BERRY</text>`;
+                   style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.22em;font-weight:500;">BOTTLE</text>`;
     // outline (re-stroke on top)
     html += `<path d="${path}" fill="none" stroke="#2a1240" stroke-width="1.4"/>`;
 
