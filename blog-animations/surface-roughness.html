@@ -1,34 +1,165 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Surface Roughness — Specular vs Diffuse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; }
+  :root {
+    --bg: #0a0d16;
+    --bg-soft: #121624;
+    --ink: #ede7d6;
+    --ink-dim: #a9a496;
+    --rule: #2a2e3d;
+    --amber: #ffc864;
+    --amber-soft: rgba(255, 200, 100, 0.22);
+    --violet: #b088ff;
+    --violet-soft: rgba(176, 136, 255, 0.20);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
-    margin: 0; padding: 0; height: 100%;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: #faf9f7; color: #2e230d;
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-weight: 300;
+    overflow: hidden;
   }
-  .wrap { display: flex; flex-direction: column; height: 100%; padding: 12px 16px; gap: 10px; }
-  .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 13px; }
-  .slider { display: flex; align-items: center; gap: 8px; min-width: 260px; flex: 1; }
+  body {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255, 200, 100, 0.05), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 60%, rgba(176, 136, 255, 0.04), transparent 60%);
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.4; z-index: 100;
+    mix-blend-mode: overlay;
+  }
+  .wrap {
+    display: flex; flex-direction: column;
+    height: 100%;
+    padding: 12px 16px 10px;
+    gap: 10px;
+  }
+  .controls {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 12px 20px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .slider {
+    display: flex; align-items: center; gap: 10px;
+    flex: 1; min-width: 240px;
+  }
   .slider label { white-space: nowrap; }
-  .slider input[type=range] { flex: 1; accent-color: #a07d2e; }
+  .slider input[type=range] {
+    flex: 1;
+    -webkit-appearance: none; appearance: none;
+    height: 2px; background: var(--rule); outline: none;
+  }
+  .slider input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px;
+    background: var(--amber); border-radius: 50%;
+    cursor: grab; box-shadow: 0 0 10px var(--amber-soft);
+  }
+  .slider input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    background: var(--amber); border: none; border-radius: 50%;
+    cursor: grab;
+  }
   .slider .val {
-    font-variant-numeric: tabular-nums; min-width: 70px;
-    text-align: right; color: #8a6b28;
+    font-variant-numeric: tabular-nums;
+    color: var(--amber); min-width: 64px; text-align: right;
   }
-  canvas {
-    flex: 1; width: 100%; display: block;
-    background: #f5f0e8; border-radius: 8px;
-    touch-action: none; user-select: none;
+  .readout {
+    margin-left: auto;
+    color: var(--amber);
+    font-size: 10.5px;
+    text-align: right;
   }
-  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #5a451a; }
+  .scene {
+    flex: 1;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)),
+      var(--bg-soft);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .scene::before {
+    content: ""; position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--amber), transparent);
+    opacity: 0.3; z-index: 1;
+  }
+  svg { width: 100%; height: 100%; display: block; }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 16px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
-  .legend i { display: inline-block; width: 16px; height: 2px; border-radius: 1px; }
-  @media (max-width: 520px) { .slider { min-width: 100%; } }
+  .legend i {
+    display: inline-block; width: 16px; height: 2px;
+    background-image: linear-gradient(90deg, currentColor 60%, transparent 60%);
+    background-size: 6px 2px;
+  }
+
+  .ray-incident {
+    stroke: var(--amber);
+    stroke-width: 1.6;
+    fill: none;
+    stroke-dasharray: 4 8;
+    animation: dashflow 1.5s linear infinite;
+    filter: drop-shadow(0 0 3px var(--amber-soft));
+  }
+  .ray-reflect {
+    stroke: var(--amber);
+    stroke-width: 1.2;
+    fill: none;
+    stroke-dasharray: 4 8;
+    animation: dashflow 1.7s linear infinite;
+    filter: drop-shadow(0 0 2px var(--amber-soft));
+  }
+  @keyframes dashflow {
+    to { stroke-dashoffset: -60; }
+  }
+
+  .axis {
+    stroke: var(--ink-dim);
+    stroke-width: 0.8;
+    stroke-dasharray: 2 4;
+    opacity: 0.55;
+  }
+  .label-text {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 9.5px;
+    fill: var(--ink-dim);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .label-hot { fill: var(--amber); }
+  .label-cold { fill: var(--violet); }
+
+  @media (max-width: 520px) {
+    .slider { min-width: 100%; }
+    .readout { margin-left: 0; width: 100%; text-align: left; }
+  }
 </style>
 </head>
 <body>
@@ -39,280 +170,227 @@
       <input id="rough" type="range" min="0" max="1" step="0.01" value="0.05">
       <span class="val" id="roughVal">smooth</span>
     </div>
+    <span class="readout" id="readout">shiny — light reflects evenly</span>
   </div>
-  <canvas id="c"></canvas>
+  <div class="scene">
+    <svg id="svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="bottleGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#9e54d4"/>
+          <stop offset="50%" stop-color="#7e3eb0"/>
+          <stop offset="100%" stop-color="#3a1860"/>
+        </linearGradient>
+        <filter id="hiBlurSmooth">
+          <feGaussianBlur id="hiBlurOp" stdDeviation="2"/>
+        </filter>
+        <filter id="grain" x="0" y="0" width="100%" height="100%">
+          <feTurbulence id="grainTurb" type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3"/>
+          <feColorMatrix values="0 0 0 0 1
+                                  0 0 0 0 1
+                                  0 0 0 0 1
+                                  0 0 0 0.5 0"/>
+          <feComposite in2="SourceGraphic" operator="in"/>
+        </filter>
+      </defs>
+
+      <!-- Divider between scenes -->
+      <line x1="540" y1="20" x2="540" y2="300" stroke="rgba(160,125,46,0.18)" stroke-width="1"/>
+
+      <!-- LEFT: ray scene -->
+      <!-- Surface fill -->
+      <rect x="0" y="225" width="540" height="95" fill="#1a1f30"/>
+      <!-- Hatching -->
+      <g id="hatching"></g>
+      <!-- Surface line -->
+      <line x1="0" y1="225" x2="540" y2="225" stroke="#a9a496" stroke-width="1.4"/>
+      <text class="label-text" x="14" y="216" id="surfaceLabel">smooth surface</text>
+
+      <!-- Normal -->
+      <line class="axis" x1="270" y1="20" x2="270" y2="240"/>
+      <text class="label-text" x="270" y="14" text-anchor="middle">normal</text>
+
+      <!-- Incident ray -->
+      <line class="ray-incident" x1="80" y1="55" x2="270" y2="225" id="incidentRay"/>
+      <text class="label-text label-hot" x="100" y="50">θ₁</text>
+
+      <!-- Reflected rays — generated -->
+      <g id="reflectedRays"></g>
+
+      <!-- Hit dot -->
+      <circle cx="270" cy="225" r="4" fill="#0a0d16" stroke="#ffc864" stroke-width="1.6"/>
+
+      <!-- RIGHT: bottle preview -->
+      <g id="bottleGroup"></g>
+      <text class="label-text" x="720" y="296" text-anchor="middle" id="bottleCaption">shiny — light reflects evenly</text>
+    </svg>
+  </div>
   <div class="legend">
-    <span><i style="background:#f7c948"></i>incident ray</span>
-    <span><i style="background:#d97706"></i>reflected rays</span>
-    <span><i style="background:#9ca3af"></i>surface normal</span>
-    <span style="color:#8a6b28">drag the slider — left shows the rays, right shows the bottle's appearance</span>
+    <span style="color:#ffc864"><i></i>incident · reflected light</span>
+    <span style="color:#a9a496"><i></i>surface normal (dashed)</span>
+    <span style="color:#b088ff"><i></i>blueberry shake bottle</span>
   </div>
 </div>
 <script>
 (() => {
-  const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d');
   const roughEl = document.getElementById('rough');
   const roughVal = document.getElementById('roughVal');
+  const readout = document.getElementById('readout');
+  const reflG = document.getElementById('reflectedRays');
+  const bottleGroup = document.getElementById('bottleGroup');
+  const surfaceLabel = document.getElementById('surfaceLabel');
+  const bottleCaption = document.getElementById('bottleCaption');
+  const hatching = document.getElementById('hatching');
+  const hiBlurOp = document.getElementById('hiBlurOp');
 
   let roughness = 0.05;
 
-  // Stable pseudo-random offsets so rays don't flicker
+  // Stable PRNG offsets
   const N_RAYS = 16;
-  const rngSeed = [];
+  const offsets = [];
   for (let i = 0; i < N_RAYS; i++) {
     const s = Math.sin((i + 1) * 12.9898) * 43758.5453;
-    rngSeed.push((s - Math.floor(s)) * 2 - 1); // [-1, 1]
+    offsets.push((s - Math.floor(s)) * 2 - 1);
   }
 
-  function resize() {
-    const dpr = window.devicePixelRatio || 1;
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    draw();
-  }
-
-  function drawArrowRay(x1, y1, x2, y2, color, alpha = 1, width = 2.4) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
-    ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    const ang = Math.atan2(y2 - y1, x2 - x1);
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(x2, y2);
-    ctx.lineTo(x2 - Math.cos(ang - 0.4) * 9, y2 - Math.sin(ang - 0.4) * 9);
-    ctx.lineTo(x2 - Math.cos(ang + 0.4) * 9, y2 - Math.sin(ang + 0.4) * 9);
-    ctx.closePath(); ctx.fill();
-    ctx.restore();
-  }
-
-  function bottlePath(cx, cy, bw, bh) {
-    const left = cx - bw / 2;
-    const right = cx + bw / 2;
-    const top = cy - bh / 2;
-    const bottom = cy + bh / 2;
-    const capH = bh * 0.05;
-    const neckH = bh * 0.16;
-    const neckW = bw * 0.36;
-    const shoulder = top + capH + neckH;
-    ctx.beginPath();
-    ctx.moveTo(cx - neckW / 2, top + capH);
-    ctx.lineTo(cx - neckW / 2, shoulder);
-    ctx.bezierCurveTo(left, shoulder + bh * 0.06, left, bottom - bh * 0.05, cx, bottom);
-    ctx.bezierCurveTo(right, bottom - bh * 0.05, right, shoulder + bh * 0.06, cx + neckW / 2, shoulder);
-    ctx.lineTo(cx + neckW / 2, top + capH);
-    ctx.closePath();
-    return { left, right, top, bottom, capH, neckW };
-  }
-
-  function drawBottle(cx, cy, bw, bh, roughness) {
-    ctx.save();
-    const { left, right, top, bottom, capH, neckW } = bottlePath(cx, cy, bw, bh);
-
-    // base purple gradient
-    const grad = ctx.createLinearGradient(left, top, right, bottom);
-    grad.addColorStop(0, '#6a3296');
-    grad.addColorStop(0.5, '#7e3eb0');
-    grad.addColorStop(1, '#3a1860');
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // specular highlight: tight + bright when smooth, broad + faint when rough
-    ctx.save();
-    bottlePath(cx, cy, bw, bh);
-    ctx.clip();
-    const hlAlpha = Math.max(0.08, 0.95 - roughness * 0.85);
-    const hlBlur = 4 + roughness * 26;
-    ctx.filter = `blur(${hlBlur}px)`;
-    ctx.globalAlpha = hlAlpha;
-    ctx.fillStyle = '#ffffff';
-    const hlW = bw * (0.10 + roughness * 0.55);
-    const hlH = bh * (0.55 - roughness * 0.18);
-    ctx.beginPath();
-    ctx.ellipse(cx - bw * 0.18, cy - bh * 0.10, hlW, hlH, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // grainy texture — only when rough
-    if (roughness > 0.05) {
-      ctx.save();
-      bottlePath(cx, cy, bw, bh);
-      ctx.clip();
-      const grains = Math.floor(700 * roughness);
-      for (let i = 0; i < grains; i++) {
-        const u = ((i * 73 + 13) % 997) / 997;
-        const v = ((i * 131 + 7) % 991) / 991;
-        const px = left + u * bw;
-        const py = top + v * bh;
-        const a = 0.22 * roughness;
-        ctx.fillStyle = (i & 1) ? `rgba(255,255,255,${a})` : `rgba(15,5,40,${a})`;
-        ctx.fillRect(px, py, 2, 2);
-      }
-      ctx.restore();
+  function drawHatching() {
+    let html = '';
+    for (let x = -110; x < 540; x += 12) {
+      html += `<line x1="${x}" y1="225" x2="${x + 95}" y2="320" stroke="#a9a496" stroke-width="0.6" opacity="0.45"/>`;
     }
-
-    // cap
-    ctx.fillStyle = '#2f1547';
-    ctx.fillRect(cx - neckW / 2 - 4, top, neckW + 8, capH);
-    ctx.strokeStyle = '#1c0a2c';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(cx - neckW / 2 - 4, top, neckW + 8, capH);
-
-    // outline
-    bottlePath(cx, cy, bw, bh);
-    ctx.strokeStyle = '#2a1240';
-    ctx.lineWidth = 1.4;
-    ctx.stroke();
-
-    // label "BLUEBERRY"
-    ctx.save();
-    bottlePath(cx, cy, bw, bh);
-    ctx.clip();
-    ctx.fillStyle = `rgba(255,255,255,${0.85 - roughness * 0.5})`;
-    ctx.font = `700 ${Math.max(9, bw * 0.11)}px Inter, system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('BLUE', cx, cy - bh * 0.02);
-    ctx.fillText('BERRY', cx, cy + bh * 0.10);
-    ctx.restore();
-
-    ctx.restore();
+    hatching.innerHTML = html;
   }
 
-  function draw() {
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    ctx.clearRect(0, 0, w, h);
+  // Hit point at (270, 225). Incident ray from upper-left at 45° from normal.
+  // Reflected base direction: mirrored about normal → upper-right.
+  function drawReflectedRays() {
+    const hitX = 270, hitY = 225;
+    const incAng = 45 * Math.PI / 180; // angle from normal
 
-    const splitX = w * 0.58;
+    // Base reflected direction (in screen coords, dy negative = up)
+    const baseDx = Math.sin(incAng);
+    const baseDy = -Math.cos(incAng);
+    const baseAng = Math.atan2(baseDy, baseDx);
 
-    // divider
-    ctx.strokeStyle = 'rgba(160,125,46,0.15)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(splitX, 16); ctx.lineTo(splitX, h - 16); ctx.stroke();
-
-    // ===== LEFT: ray scene =====
-    const lw = splitX, lh = h;
-    const surfaceY = lh * 0.72;
-    const hitX = lw * 0.5;
-    const hitY = surfaceY;
-
-    // surface fill
-    ctx.fillStyle = '#e8dfd2';
-    ctx.fillRect(0, surfaceY, lw, h - surfaceY);
-    // hatching
-    ctx.strokeStyle = '#a07d2e'; ctx.lineWidth = 1;
-    for (let x = -lh; x < lw; x += 10) {
-      ctx.beginPath(); ctx.moveTo(x, surfaceY); ctx.lineTo(x + (lh - surfaceY), lh); ctx.stroke();
-    }
-    ctx.strokeStyle = '#8a6b28'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(0, surfaceY); ctx.lineTo(lw, surfaceY); ctx.stroke();
-
-    // surface label
-    ctx.fillStyle = '#6b7a88';
-    ctx.font = '12px Inter, system-ui, sans-serif';
-    ctx.textAlign = 'left';
-    const surfLabel = roughness < 0.15 ? 'smooth surface (mirror-like)' :
-                      roughness > 0.7 ? 'rough surface' :
-                      'surface';
-    ctx.fillText(surfLabel, 12, surfaceY - 8);
-
-    // normal (dashed)
-    ctx.save();
-    ctx.setLineDash([6, 6]);
-    ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(hitX, surfaceY - lh * 0.6);
-    ctx.lineTo(hitX, surfaceY + 16);
-    ctx.stroke();
-    ctx.restore();
-    ctx.fillStyle = '#9ca3af';
-    ctx.font = '600 11px Inter, system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('normal', hitX, surfaceY - lh * 0.6 - 6);
-
-    // incident ray (45° from upper-left)
-    const incAng = Math.PI * 0.30; // angle from normal
-    const incLen = lh * 0.55;
-    const ix = hitX - Math.sin(incAng) * incLen;
-    const iy = surfaceY - Math.cos(incAng) * incLen;
-    drawArrowRay(ix, iy, hitX, hitY, '#f7c948', 1, 2.6);
-
-    // reflected rays — fan based on roughness
-    const reflLen = lh * 0.55;
-    const baseDirX = Math.sin(incAng);
-    const baseDirY = -Math.cos(incAng);
-    const baseAng = Math.atan2(baseDirY, baseDirX);
-
-    const maxSpread = (Math.PI / 2) * 0.92 * roughness; // up to ~83°
+    const reflLen = 200;
+    const maxSpread = (Math.PI / 2) * 0.92 * roughness;
     const numRays = roughness < 0.02 ? 1 : N_RAYS;
 
+    let html = '';
     for (let i = 0; i < numRays; i++) {
-      const r = numRays === 1 ? 0 : rngSeed[i];
+      const r = numRays === 1 ? 0 : offsets[i];
       const offset = r * maxSpread;
       const ang = baseAng + offset;
       const dx = Math.cos(ang);
       const dy = Math.sin(ang);
-      // discard rays that would dive into the surface
-      if (dy >= -0.04) continue;
+      if (dy >= -0.04) continue; // skip rays that would dive into surface
       const ex = hitX + dx * reflLen;
       const ey = hitY + dy * reflLen;
-      const alpha = numRays === 1 ? 1 : 0.4 + (1 - Math.abs(r)) * 0.4;
-      drawArrowRay(hitX, hitY, ex, ey, '#d97706', alpha, 2.2);
+      const opacity = numRays === 1 ? 1 : 0.45 + (1 - Math.abs(r)) * 0.45;
+      html += `<line x1="${hitX}" y1="${hitY}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}"
+                     class="ray-reflect" opacity="${opacity.toFixed(2)}"/>`;
     }
-
-    // hit dot
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = '#d97706';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(hitX, hitY, 5, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-
-    // ===== RIGHT: bottle preview =====
-    const rw = w - splitX, rh = h;
-    const cx = splitX + rw / 2;
-    const cy = rh * 0.5;
-    const bw = Math.min(rw * 0.5, rh * 0.32);
-    const bh = bw * 1.85;
-
-    // soft floor shadow
-    ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    ctx.filter = 'blur(8px)';
-    ctx.beginPath();
-    ctx.ellipse(cx, cy + bh / 2 + 6, bw * 0.55, 7, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    drawBottle(cx, cy, bw, bh, roughness);
-
-    // caption
-    ctx.fillStyle = '#6b7a88';
-    ctx.font = '12px Inter, system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    const label = roughness < 0.15 ? 'shiny — light reflects evenly' :
-                  roughness > 0.7 ? 'matte / grainy — light scatters' :
-                  'partly smooth';
-    ctx.fillText(label, cx, rh - 14);
+    reflG.innerHTML = html;
   }
 
-  roughEl.addEventListener('input', () => {
-    roughness = parseFloat(roughEl.value);
+  function bottlePath(cx, cy, bw, bh) {
+    const left = cx - bw/2, right = cx + bw/2;
+    const top = cy - bh/2, bottom = cy + bh/2;
+    const capH = bh * 0.05, neckH = bh * 0.14;
+    const neckW = bw * 0.36;
+    const shoulder = top + capH + neckH;
+    return `M ${cx - neckW/2} ${top + capH}
+            L ${cx - neckW/2} ${shoulder}
+            C ${left} ${shoulder + bh*0.06}, ${left} ${bottom - bh*0.05}, ${cx} ${bottom}
+            C ${right} ${bottom - bh*0.05}, ${right} ${shoulder + bh*0.06}, ${cx + neckW/2} ${shoulder}
+            L ${cx + neckW/2} ${top + capH} Z`;
+  }
+
+  function drawBottle() {
+    const cx = 720, cy = 155;
+    const bw = 90, bh = 200;
+    const top = cy - bh/2;
+    const capH = bh * 0.05, neckW = bw * 0.36;
+    const path = bottlePath(cx, cy, bw, bh);
+
+    // highlight scaling
+    const hiSize = 0.10 + roughness * 0.55;
+    const hiAlpha = Math.max(0.10, 0.95 - roughness * 0.85);
+    const hiBlur = 2 + roughness * 22;
+    hiBlurOp.setAttribute('stdDeviation', hiBlur.toFixed(1));
+
+    // grainy overlay alpha
+    const grainAlpha = roughness * 0.55;
+
+    let html = '';
+    // soft floor shadow
+    html += `<ellipse cx="${cx}" cy="${cy + bh/2 + 6}" rx="${bw*0.55}" ry="6"
+                      fill="rgba(0,0,0,0.55)" filter="url(#hiBlurSmooth)"/>`;
+    // body
+    html += `<path d="${path}" fill="url(#bottleGrad)" stroke="#2a1240" stroke-width="1.4"/>`;
+    // specular highlight
+    html += `<g clip-path="url(#bottleClipA)">
+              <ellipse cx="${cx - bw*0.18}" cy="${cy - bh*0.10}"
+                       rx="${bw * hiSize}" ry="${bh * 0.42}"
+                       fill="rgba(255,255,255,${hiAlpha.toFixed(2)})"
+                       filter="url(#hiBlurSmooth)"/>
+             </g>`;
+    // grainy texture (only when rough)
+    if (grainAlpha > 0.02) {
+      html += `<g clip-path="url(#bottleClipA)" opacity="${grainAlpha.toFixed(2)}">
+                <rect x="${cx - bw/2}" y="${cy - bh/2}" width="${bw}" height="${bh}"
+                      fill="white" filter="url(#grain)"/>
+               </g>`;
+    }
+    // cap
+    html += `<rect x="${cx - neckW/2 - 3}" y="${top}" width="${neckW + 6}" height="${capH}"
+                   fill="#2f1547" stroke="#1c0a2c" stroke-width="0.6"/>`;
+    // label text
+    html += `<text x="${cx}" y="${cy - 4}" text-anchor="middle"
+                   fill="rgba(255,255,255,${(0.85 - roughness * 0.55).toFixed(2)})"
+                   style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;font-weight:500;">BLUE</text>`;
+    html += `<text x="${cx}" y="${cy + 12}" text-anchor="middle"
+                   fill="rgba(255,255,255,${(0.85 - roughness * 0.55).toFixed(2)})"
+                   style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;font-weight:500;">BERRY</text>`;
+    // outline (re-stroke on top)
+    html += `<path d="${path}" fill="none" stroke="#2a1240" stroke-width="1.4"/>`;
+
+    // clipPath def
+    html = `<defs>
+              <clipPath id="bottleClipA">
+                <path d="${path}"/>
+              </clipPath>
+            </defs>` + html;
+
+    bottleGroup.innerHTML = html;
+  }
+
+  function update() {
+    drawReflectedRays();
+    drawBottle();
+    // labels
+    surfaceLabel.textContent =
+      roughness < 0.15 ? 'smooth surface (mirror-like)' :
+      roughness > 0.7  ? 'rough surface' :
+      'surface';
+    bottleCaption.textContent =
+      roughness < 0.15 ? 'shiny — light reflects evenly' :
+      roughness > 0.7  ? 'matte / grainy — light scatters' :
+      'partly smooth';
+    readout.textContent = bottleCaption.textContent;
     roughVal.textContent =
       roughness < 0.05 ? 'mirror' :
       roughness < 0.25 ? 'smooth' :
       roughness < 0.6  ? 'medium' :
       roughness < 0.9  ? 'rough'  : 'matte';
-    draw();
+  }
+
+  roughEl.addEventListener('input', () => {
+    roughness = parseFloat(roughEl.value);
+    update();
   });
 
-  window.addEventListener('resize', resize);
-  resize();
+  drawHatching();
+  update();
 })();
 </script>
 </body>

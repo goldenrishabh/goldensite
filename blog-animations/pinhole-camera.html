@@ -1,43 +1,201 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Capturing the Bottle — Paper, Enclosure, Aperture</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pinhole Camera — Paper, Enclosure, Aperture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0; padding: 0; height: 100%;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: #faf9f7; color: #2e230d;
+  :root {
+    --bg: #0a0d16;
+    --bg-soft: #121624;
+    --ink: #ede7d6;
+    --ink-dim: #a9a496;
+    --rule: #2a2e3d;
+    --amber: #ffc864;
+    --amber-soft: rgba(255, 200, 100, 0.22);
+    --cyan: #7ad0ff;
+    --violet: #b088ff;
+    --violet-soft: rgba(176, 136, 255, 0.20);
+    --red: #ff7a6b;
   }
-  .wrap { display: flex; flex-direction: column; height: 100%; padding: 12px 16px; gap: 10px; }
-  .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 13px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-weight: 300;
+    overflow: hidden;
+  }
+  body {
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255, 200, 100, 0.05), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 60%, rgba(176, 136, 255, 0.04), transparent 60%);
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.4; z-index: 100;
+    mix-blend-mode: overlay;
+  }
+  .wrap {
+    display: flex; flex-direction: column;
+    height: 100%;
+    padding: 12px 16px 10px;
+    gap: 10px;
+  }
+  .controls {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 12px 20px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
   .toggle {
     display: inline-flex; align-items: center; gap: 8px;
-    padding: 6px 12px; border: 1px solid #d4c5ab; border-radius: 8px;
-    background: #fff; cursor: pointer; user-select: none;
+    padding: 6px 12px;
+    border: 1px solid var(--rule);
+    background: var(--bg-soft);
+    cursor: pointer; user-select: none;
+    transition: border-color 0.18s, color 0.18s, box-shadow 0.18s;
+    color: var(--ink-dim);
   }
-  .toggle input { accent-color: #a07d2e; margin: 0; }
-  .toggle.active { background: #a07d2e; color: #fff; border-color: #a07d2e; }
-  .slider { display: flex; align-items: center; gap: 8px; min-width: 240px; flex: 1; }
-  .slider.disabled { opacity: 0.4; pointer-events: none; }
+  .toggle.active {
+    border-color: var(--amber);
+    color: var(--amber);
+    box-shadow: 0 0 14px rgba(255,200,100,0.18);
+  }
+  .toggle input { display: none; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid currentColor; display: inline-block; }
+  .toggle.active .dot { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 6px var(--amber); }
+  .slider {
+    display: flex; align-items: center; gap: 10px;
+    flex: 1; min-width: 220px;
+  }
+  .slider.disabled { opacity: 0.30; pointer-events: none; }
   .slider label { white-space: nowrap; }
-  .slider input[type=range] { flex: 1; accent-color: #a07d2e; }
+  .slider input[type=range] {
+    flex: 1;
+    -webkit-appearance: none; appearance: none;
+    height: 2px; background: var(--rule); outline: none;
+  }
+  .slider input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px;
+    background: var(--amber); border-radius: 50%;
+    cursor: grab; box-shadow: 0 0 10px var(--amber-soft);
+  }
+  .slider input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    background: var(--amber); border: none; border-radius: 50%;
+    cursor: grab;
+  }
   .slider .val {
-    font-variant-numeric: tabular-nums; min-width: 56px;
-    text-align: right; color: #8a6b28;
+    font-variant-numeric: tabular-nums;
+    color: var(--amber); min-width: 44px; text-align: right;
   }
-  canvas {
-    flex: 1; width: 100%; display: block;
-    background: #f5f0e8; border-radius: 8px;
-    touch-action: none; user-select: none;
+  .readout {
+    margin-left: auto;
+    color: var(--amber);
+    font-size: 10.5px;
+    text-align: right;
   }
-  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: #5a451a; }
+  .scene {
+    flex: 1;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)),
+      var(--bg-soft);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .scene::before {
+    content: ""; position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--amber), transparent);
+    opacity: 0.3; z-index: 1;
+  }
+  svg { width: 100%; height: 100%; display: block; }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 16px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
-  .legend i { display: inline-block; width: 16px; height: 2px; border-radius: 1px; }
-  .readout { font-variant-numeric: tabular-nums; color: #6b7a88; margin-left: auto; font-size: 12px; }
-  @media (max-width: 600px) { .slider { min-width: 100%; } .readout { margin-left: 0; } }
+  .legend i {
+    display: inline-block; width: 16px; height: 2px;
+    background-image: linear-gradient(90deg, currentColor 60%, transparent 60%);
+    background-size: 6px 2px;
+  }
+
+  /* SVG ray styles — flowing dashed look */
+  .ray-source {
+    stroke: var(--amber);
+    stroke-width: 1.4;
+    fill: none;
+    stroke-dasharray: 4 8;
+    animation: dashflow 1.6s linear infinite;
+    filter: drop-shadow(0 0 3px var(--amber-soft));
+  }
+  .ray-source-faint {
+    stroke: var(--amber);
+    stroke-width: 1;
+    fill: none;
+    stroke-dasharray: 4 8;
+    animation: dashflow 2.2s linear infinite;
+    opacity: 0.18;
+  }
+  .ray-reflect {
+    stroke: var(--violet);
+    stroke-width: 1.2;
+    fill: none;
+    stroke-dasharray: 4 8;
+    animation: dashflow 1.8s linear infinite;
+    filter: drop-shadow(0 0 3px var(--violet-soft));
+  }
+  .ray-blocked {
+    stroke: var(--ink-dim);
+    stroke-width: 0.9;
+    fill: none;
+    stroke-dasharray: 2 4;
+    opacity: 0.40;
+  }
+  .blocked-x line {
+    stroke: var(--red);
+    stroke-width: 1.3;
+    opacity: 0.75;
+  }
+  @keyframes dashflow {
+    to { stroke-dashoffset: -60; }
+  }
+
+  .wall { fill: #1a1f30; stroke: var(--ink-dim); stroke-width: 0.7; }
+  .label-text {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 9.5px;
+    fill: var(--ink-dim);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .label-hot { fill: var(--amber); }
+  .label-cold { fill: var(--violet); }
+
+  @media (max-width: 600px) {
+    .slider { min-width: 100%; }
+    .readout { margin-left: 0; width: 100%; text-align: left; }
+  }
 </style>
 </head>
 <body>
@@ -45,454 +203,461 @@
   <div class="controls">
     <label class="toggle" id="enclToggle">
       <input type="checkbox" id="encl">
-      <span>Enclosure around paper</span>
+      <span class="dot"></span>
+      <span>Enclosure</span>
     </label>
     <div class="slider" id="apWrap">
       <label>Aperture</label>
-      <input id="ap" type="range" min="0.05" max="1" step="0.01" value="0.55">
+      <input id="ap" type="range" min="0.04" max="1" step="0.01" value="0.55">
       <span class="val" id="apVal">55%</span>
     </div>
-    <span class="readout" id="readout">paper sees direct + reflected light → washed out</span>
+    <span class="readout" id="readout">no enclosure · paper sees direct + reflected</span>
   </div>
-  <canvas id="c"></canvas>
+  <div class="scene">
+    <svg id="svg" viewBox="0 0 900 360" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fff5d6"/>
+          <stop offset="55%" stop-color="#ffc864"/>
+          <stop offset="100%" stop-color="#a07d2e"/>
+        </radialGradient>
+        <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(255,200,100,0.55)"/>
+          <stop offset="100%" stop-color="rgba(255,200,100,0)"/>
+        </radialGradient>
+        <linearGradient id="bottleGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#9e54d4"/>
+          <stop offset="50%" stop-color="#7e3eb0"/>
+          <stop offset="100%" stop-color="#3a1860"/>
+        </linearGradient>
+        <filter id="hiBlur">
+          <feGaussianBlur stdDeviation="2.5"/>
+        </filter>
+        <filter id="paperBlur" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur id="paperBlurOp" stdDeviation="6"/>
+        </filter>
+        <clipPath id="paperClip">
+          <rect id="paperClipRect" x="0" y="0" width="0" height="0"/>
+        </clipPath>
+      </defs>
+
+      <!-- Sun glow halo -->
+      <circle cx="380" cy="48" r="46" fill="url(#sunGlow)"/>
+      <!-- Sun spokes (decorative) -->
+      <g id="sunSpokes"></g>
+      <!-- Sun body -->
+      <circle cx="380" cy="48" r="13" fill="url(#sunGrad)" stroke="#ffd87a" stroke-width="0.8"/>
+      <text class="label-text" x="380" y="82" text-anchor="middle">light source</text>
+
+      <!-- Bottle group -->
+      <g id="bottleGroup"></g>
+      <text class="label-text" x="160" y="320" text-anchor="middle">bottle</text>
+
+      <!-- Box walls -->
+      <g id="boxWalls"></g>
+
+      <!-- Paper (with captured image) -->
+      <g id="paperG"></g>
+
+      <!-- Aperture annotation -->
+      <g id="apAnnotation"></g>
+
+      <!-- Rays -->
+      <g id="rays"></g>
+    </svg>
+  </div>
   <div class="legend">
-    <span><i style="background:#f7c948"></i>direct light from source</span>
-    <span><i style="background:#a855f7"></i>reflected light from bottle</span>
-    <span><i style="background:#9ca3af"></i>blocked by enclosure wall</span>
-    <span style="color:#8a6b28">toggle the enclosure, then drag the aperture from wide → pinhole</span>
+    <span style="color:#ffc864"><i></i>direct light</span>
+    <span style="color:#b088ff"><i></i>reflected light</span>
+    <span style="color:#a9a496"><i></i>blocked at wall</span>
   </div>
 </div>
 <script>
 (() => {
-  const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d');
   const enclEl = document.getElementById('encl');
   const enclToggle = document.getElementById('enclToggle');
   const apEl = document.getElementById('ap');
   const apVal = document.getElementById('apVal');
   const apWrap = document.getElementById('apWrap');
   const readout = document.getElementById('readout');
+  const sunSpokes = document.getElementById('sunSpokes');
+  const bottleGroup = document.getElementById('bottleGroup');
+  const boxWalls = document.getElementById('boxWalls');
+  const paperG = document.getElementById('paperG');
+  const apAnn = document.getElementById('apAnnotation');
+  const rays = document.getElementById('rays');
+  const paperBlurOp = document.getElementById('paperBlurOp');
+  const paperClipRect = document.getElementById('paperClipRect');
 
   let enclosureOn = false;
   let aperture = 0.55;
 
-  // Stable scattering offsets
-  const SAMPLES = 5;
-  const RAYS_PER_SAMPLE = 6;
-  const offsets = [];
-  for (let i = 0; i < SAMPLES * RAYS_PER_SAMPLE; i++) {
-    const s = Math.sin((i + 1) * 12.9898) * 43758.5453;
-    offsets.push((s - Math.floor(s)) * 2 - 1);
-  }
+  // Geometry — fixed in viewBox space
+  const SUN = { x: 380, y: 48, r: 13 };
+  const BOTTLE = { cx: 160, cy: 200, w: 70, h: 130 };
+  const BOX = {
+    left: 510, right: 870,
+    top: 80, bottom: 290,
+    wallT: 8,
+  };
+  BOX.cy = (BOX.top + BOX.bottom) / 2;
+  BOX.frontH = BOX.bottom - BOX.top;
+  const PAPER = {
+    x1: 832, x2: 858,
+    y1: BOX.top + 14,
+    y2: BOX.bottom - 14,
+  };
 
-  function resize() {
-    const dpr = window.devicePixelRatio || 1;
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    draw();
-  }
-
-  function drawArrowRay(x1, y1, x2, y2, color, alpha = 1, width = 1.8) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = width;
-    ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    const ang = Math.atan2(y2 - y1, x2 - x1);
-    const len = Math.hypot(x2 - x1, y2 - y1);
-    if (len > 18) {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.moveTo(x2, y2);
-      ctx.lineTo(x2 - Math.cos(ang - 0.45) * 7, y2 - Math.sin(ang - 0.45) * 7);
-      ctx.lineTo(x2 - Math.cos(ang + 0.45) * 7, y2 - Math.sin(ang + 0.45) * 7);
-      ctx.closePath(); ctx.fill();
+  // Sun decorative spokes
+  function drawSunSpokes() {
+    let html = '';
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      const x1 = SUN.x + Math.cos(a) * (SUN.r + 4);
+      const y1 = SUN.y + Math.sin(a) * (SUN.r + 4);
+      const x2 = SUN.x + Math.cos(a) * (SUN.r + 9);
+      const y2 = SUN.y + Math.sin(a) * (SUN.r + 9);
+      html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ffc864" stroke-width="1.1" opacity="0.7"/>`;
     }
-    ctx.restore();
-  }
-
-  function drawBlocked(x, y) {
-    ctx.save();
-    ctx.strokeStyle = '#9ca3af';
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.moveTo(x - 4, y - 4); ctx.lineTo(x + 4, y + 4);
-    ctx.moveTo(x - 4, y + 4); ctx.lineTo(x + 4, y - 4);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawSun(cx, cy, r) {
-    ctx.save();
-    // glow
-    const glow = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, r * 3);
-    glow.addColorStop(0, 'rgba(247,201,72,0.55)');
-    glow.addColorStop(1, 'rgba(247,201,72,0)');
-    ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(cx, cy, r * 3, 0, Math.PI * 2); ctx.fill();
-    // body
-    ctx.fillStyle = '#f7c948';
-    ctx.strokeStyle = '#c79320';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    // little rays
-    ctx.strokeStyle = '#c79320'; ctx.lineWidth = 1.5;
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2;
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(a) * (r + 4), cy + Math.sin(a) * (r + 4));
-      ctx.lineTo(cx + Math.cos(a) * (r + 9), cy + Math.sin(a) * (r + 9));
-      ctx.stroke();
-    }
-    ctx.restore();
+    sunSpokes.innerHTML = html;
   }
 
   function bottlePath(cx, cy, bw, bh) {
-    const left = cx - bw / 2;
-    const right = cx + bw / 2;
-    const top = cy - bh / 2;
-    const bottom = cy + bh / 2;
-    const capH = bh * 0.05;
-    const neckH = bh * 0.15;
+    const left = cx - bw/2, right = cx + bw/2;
+    const top = cy - bh/2, bottom = cy + bh/2;
+    const capH = bh * 0.06, neckH = bh * 0.14;
     const neckW = bw * 0.36;
     const shoulder = top + capH + neckH;
-    ctx.beginPath();
-    ctx.moveTo(cx - neckW / 2, top + capH);
-    ctx.lineTo(cx - neckW / 2, shoulder);
-    ctx.bezierCurveTo(left, shoulder + bh * 0.06, left, bottom - bh * 0.05, cx, bottom);
-    ctx.bezierCurveTo(right, bottom - bh * 0.05, right, shoulder + bh * 0.06, cx + neckW / 2, shoulder);
-    ctx.lineTo(cx + neckW / 2, top + capH);
-    ctx.closePath();
-    return { left, right, top, bottom, capH, neckW, shoulder };
+    return `M ${cx - neckW/2} ${top + capH}
+            L ${cx - neckW/2} ${shoulder}
+            C ${left} ${shoulder + bh*0.06}, ${left} ${bottom - bh*0.05}, ${cx} ${bottom}
+            C ${right} ${bottom - bh*0.05}, ${right} ${shoulder + bh*0.06}, ${cx + neckW/2} ${shoulder}
+            L ${cx + neckW/2} ${top + capH} Z`;
   }
 
-  function drawBottle(cx, cy, bw, bh, withLabel = true) {
-    ctx.save();
-    const meta = bottlePath(cx, cy, bw, bh);
+  function drawBottle() {
+    const { cx, cy, w, h } = BOTTLE;
+    const top = cy - h/2;
+    const capH = h * 0.06, neckW = w * 0.36;
+    const path = bottlePath(cx, cy, w, h);
+    bottleGroup.innerHTML = `
+      <path d="${path}" fill="url(#bottleGrad)" stroke="#2a1240" stroke-width="1.2"/>
+      <ellipse cx="${cx - w*0.18}" cy="${cy - h*0.10}" rx="${w*0.10}" ry="${h*0.40}"
+               fill="rgba(255,255,255,0.55)" filter="url(#hiBlur)"/>
+      <rect x="${cx - neckW/2 - 3}" y="${top}" width="${neckW + 6}" height="${capH}"
+            fill="#2f1547" stroke="#1c0a2c" stroke-width="0.6"/>
+      <text x="${cx}" y="${cy - 2}" text-anchor="middle"
+            fill="rgba(255,255,255,0.85)"
+            style="font-family:'IBM Plex Mono',monospace;font-size:7.5px;letter-spacing:0.14em;font-weight:500;">BLUE</text>
+      <text x="${cx}" y="${cy + 8}" text-anchor="middle"
+            fill="rgba(255,255,255,0.85)"
+            style="font-family:'IBM Plex Mono',monospace;font-size:7.5px;letter-spacing:0.14em;font-weight:500;">BERRY</text>
+    `;
+  }
 
-    const grad = ctx.createLinearGradient(meta.left, meta.top, meta.right, meta.bottom);
-    grad.addColorStop(0, '#6a3296');
-    grad.addColorStop(0.5, '#7e3eb0');
-    grad.addColorStop(1, '#3a1860');
-    ctx.fillStyle = grad;
-    ctx.fill();
+  function getSamplePoints() {
+    const pts = [];
+    const N = 5;
+    const { cx, cy, w, h } = BOTTLE;
+    for (let i = 0; i < N; i++) {
+      const t = (i + 0.5) / N;
+      const py = cy - h * 0.42 + t * h * 0.84;
+      const dy = (py - cy) / (h * 0.5);
+      const px = cx + w * 0.5 * (1 - 0.10 * dy * dy);
+      pts.push({ x: px, y: py });
+    }
+    return pts;
+  }
 
-    // soft highlight
-    ctx.save();
-    bottlePath(cx, cy, bw, bh);
-    ctx.clip();
-    ctx.filter = 'blur(7px)';
-    ctx.globalAlpha = 0.55;
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.ellipse(cx - bw * 0.2, cy - bh * 0.1, bw * 0.12, bh * 0.45, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+  // ─── Ray-tracing helpers ───────────────────────────────
+  function getApertureBounds() {
+    const half = aperture * BOX.frontH * 0.45;
+    return { y1: BOX.cy - half, y2: BOX.cy + half };
+  }
 
-    // cap
-    ctx.fillStyle = '#2f1547';
-    ctx.fillRect(cx - meta.neckW / 2 - 4, meta.top, meta.neckW + 8, meta.capH);
-    ctx.strokeStyle = '#1c0a2c';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(cx - meta.neckW / 2 - 4, meta.top, meta.neckW + 8, meta.capH);
+  // Trace a ray from (sx, sy) in direction (dx, dy) (unit-ish).
+  // Returns { endX, endY, blocked, hitPaper }.
+  function traceRay(sx, sy, dx, dy) {
+    const candidates = [];
 
-    // outline
-    bottlePath(cx, cy, bw, bh);
-    ctx.strokeStyle = '#2a1240';
-    ctx.lineWidth = 1.4;
-    ctx.stroke();
-
-    if (withLabel) {
-      ctx.save();
-      bottlePath(cx, cy, bw, bh);
-      ctx.clip();
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.font = `700 ${Math.max(8, bw * 0.13)}px Inter, system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('BLUE', cx, cy - bh * 0.02);
-      ctx.fillText('BERRY', cx, cy + bh * 0.10);
-      ctx.restore();
+    // Paper plane (always present)
+    if (dx !== 0) {
+      const tP = (PAPER.x1 - sx) / dx;
+      if (tP > 1e-6) {
+        const y = sy + dy * tP;
+        if (y >= PAPER.y1 && y <= PAPER.y2) {
+          candidates.push({ t: tP, type: 'paper', x: PAPER.x1, y });
+        }
+      }
     }
 
-    ctx.restore();
-  }
-
-  function getSamplePoints(bx, by, bw, bh) {
-    const points = [];
-    for (let i = 0; i < SAMPLES; i++) {
-      const t = (i + 0.5) / SAMPLES;
-      const py = by - bh * 0.42 + t * bh * 0.84;
-      // approximate right edge of the bottle (it's mostly vertical with a slight curve)
-      const dy = (py - by) / (bh * 0.5);
-      const px = bx + bw * 0.5 * (1 - 0.10 * dy * dy);
-      points.push({ x: px, y: py });
-    }
-    return points;
-  }
-
-  function drawCapturedImage(x1, y1, x2, y2, enclosureOn, aperture) {
-    const w = x2 - x1, h = y2 - y1;
-
-    // paper background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(x1, y1, w, h);
-
-    // soft inner shadow / paper texture hint
-    ctx.save();
-    const tg = ctx.createLinearGradient(x1, y1, x2, y2);
-    tg.addColorStop(0, 'rgba(0,0,0,0.04)');
-    tg.addColorStop(0.5, 'rgba(0,0,0,0)');
-    tg.addColorStop(1, 'rgba(0,0,0,0.06)');
-    ctx.fillStyle = tg;
-    ctx.fillRect(x1, y1, w, h);
-    ctx.restore();
-
-    // captured image
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x1, y1, w, h);
-    ctx.clip();
-
-    const cx = x1 + w / 2;
-    const cy = y1 + h / 2;
-
-    if (!enclosureOn) {
-      // wash of yellow-white from direct light + faint purple haze
-      ctx.save();
-      ctx.globalAlpha = 0.18;
-      ctx.fillStyle = '#fff6d6';
-      ctx.fillRect(x1, y1, w, h);
-      ctx.restore();
-
-      ctx.globalAlpha = 0.13;
-      ctx.filter = `blur(${Math.max(22, w * 0.6)}px)`;
-      ctx.fillStyle = '#6a2dab';
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, w * 0.7, h * 0.4, 0, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      // brightness ↑ with aperture, blur ↑ with aperture
-      const blurPx = 1 + aperture * Math.max(34, h * 0.18);
-      const alpha = Math.min(0.95, 0.16 + aperture * 0.78);
-      ctx.globalAlpha = alpha;
-      ctx.filter = `blur(${blurPx}px)`;
-      // draw a small bottle silhouette as the captured image
-      const ibw = Math.min(w * 0.55, h * 0.28);
-      const ibh = ibw * 1.85;
-      ctx.fillStyle = '#6a2dab';
-      bottlePath(cx, cy, ibw, ibh);
-      ctx.fill();
-    }
-    ctx.restore();
-
-    // paper border
-    ctx.strokeStyle = '#cbb98e';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x1 + 0.5, y1 + 0.5, w - 1, h - 1);
-  }
-
-  function draw() {
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    ctx.clearRect(0, 0, w, h);
-
-    // ----- layout -----
-    const sourceX = w * 0.42;
-    const sourceY = h * 0.10;
-    const sourceR = Math.max(10, Math.min(w, h) * 0.035);
-
-    const bottleCx = w * 0.18;
-    const bottleCy = h * 0.56;
-    const bottleW = Math.min(w * 0.10, h * 0.20);
-    const bottleH = bottleW * 1.85;
-
-    const boxLeft = w * 0.58;
-    const boxRight = w * 0.95;
-    const boxTop = h * 0.20;
-    const boxBottom = h * 0.84;
-    const boxCenterY = (boxTop + boxBottom) / 2;
-    const frontHeight = boxBottom - boxTop;
-
-    // paper sits on the inside of the right wall
-    const paperX1 = boxRight - (boxRight - boxLeft) * 0.18;
-    const paperX2 = boxRight - 6;
-    const paperY1 = boxTop + 14;
-    const paperY2 = boxBottom - 14;
-
-    const apHalf = enclosureOn ? aperture * frontHeight * 0.40 : 0;
-    const apY1 = boxCenterY - apHalf;
-    const apY2 = boxCenterY + apHalf;
-
-    // ----- captured image (paper) drawn first so rays appear on top of it -----
-    drawCapturedImage(paperX1, paperY1, paperX2, paperY2, enclosureOn, aperture);
-
-    // small "paper" label
-    ctx.fillStyle = '#6b7a88';
-    ctx.font = '11px Inter, system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('paper', (paperX1 + paperX2) / 2, paperY2 + 14);
-
-    // ----- enclosure walls (drawn so rays can be drawn under/over them) -----
     if (enclosureOn) {
-      ctx.save();
-      ctx.fillStyle = 'rgba(82,68,46,0.92)';
-      const wallT = 8;
-      // top wall
-      ctx.fillRect(boxLeft, boxTop - wallT, boxRight - boxLeft, wallT);
-      // bottom wall
-      ctx.fillRect(boxLeft, boxBottom, boxRight - boxLeft, wallT);
-      // back wall (right) — thin sliver behind the paper
-      ctx.fillRect(boxRight, boxTop - wallT, wallT, boxBottom - boxTop + 2 * wallT);
-      // front wall: two segments above and below the aperture
-      ctx.fillRect(boxLeft - wallT, boxTop, wallT, apY1 - boxTop);
-      ctx.fillRect(boxLeft - wallT, apY2, wallT, boxBottom - apY2);
-      ctx.restore();
+      const ap = getApertureBounds();
 
-      // aperture annotation
-      ctx.save();
-      ctx.strokeStyle = '#a07d2e';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath();
-      ctx.moveTo(boxLeft - 28, apY1); ctx.lineTo(boxLeft - 8, apY1);
-      ctx.moveTo(boxLeft - 28, apY2); ctx.lineTo(boxLeft - 8, apY2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.beginPath();
-      ctx.moveTo(boxLeft - 22, apY1); ctx.lineTo(boxLeft - 22, apY2);
-      ctx.stroke();
-      // mini arrows at top/bottom of the bracket
-      ctx.fillStyle = '#a07d2e';
-      ctx.font = '600 11px Inter, system-ui, sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText('aperture', boxLeft - 28, boxCenterY + 4);
-      ctx.restore();
+      // Top wall (y = BOX.top), x in [BOX.left, BOX.right]
+      if (dy !== 0) {
+        const t = (BOX.top - sy) / dy;
+        if (t > 1e-6) {
+          const x = sx + dx * t;
+          if (x >= BOX.left && x <= BOX.right) {
+            candidates.push({ t, type: 'wall', x, y: BOX.top });
+          }
+        }
+      }
+      // Bottom wall (y = BOX.bottom)
+      if (dy !== 0) {
+        const t = (BOX.bottom - sy) / dy;
+        if (t > 1e-6) {
+          const x = sx + dx * t;
+          if (x >= BOX.left && x <= BOX.right) {
+            candidates.push({ t, type: 'wall', x, y: BOX.bottom });
+          }
+        }
+      }
+      // Front wall (x = BOX.left), y in [BOX.top, BOX.bottom]
+      if (dx !== 0) {
+        const t = (BOX.left - sx) / dx;
+        if (t > 1e-6) {
+          const y = sy + dy * t;
+          if (y >= BOX.top && y <= BOX.bottom) {
+            if (y < ap.y1 || y > ap.y2) {
+              candidates.push({ t, type: 'wall', x: BOX.left, y });
+            } else {
+              candidates.push({ t, type: 'aperture', x: BOX.left, y });
+            }
+          }
+        }
+      }
     }
 
-    // ----- direct yellow rays from source -----
-    // a small fan from the sun
-    const fanAngles = [-0.65, -0.35, -0.05, 0.25, 0.55];
-    for (const a of fanAngles) {
-      const dx = Math.sin(a);
-      const dy = Math.cos(a);
-      const len = h * 0.85;
-      drawArrowRay(sourceX, sourceY, sourceX + dx * len, sourceY + dy * len, '#f7c948', 0.18, 1.2);
+    if (candidates.length === 0) {
+      // ray escapes — extend to viewport edge
+      const t = 1500;
+      return { endX: sx + dx * t, endY: sy + dy * t, blocked: false, hitPaper: false, escaped: true };
     }
 
-    // a clearly visible direct ray from sun aimed at the paper
+    candidates.sort((a, b) => a.t - b.t);
+    const first = candidates[0];
+
+    if (first.type === 'wall') {
+      return { endX: first.x, endY: first.y, blocked: true, hitPaper: false };
+    }
+    if (first.type === 'paper') {
+      return { endX: first.x, endY: first.y, blocked: false, hitPaper: true };
+    }
+    if (first.type === 'aperture') {
+      // Ray passes through; find next intersection (paper expected)
+      for (let i = 1; i < candidates.length; i++) {
+        const c = candidates[i];
+        if (c.type === 'paper') {
+          return { endX: c.x, endY: c.y, blocked: false, hitPaper: true, viaAperture: true };
+        }
+        if (c.type === 'wall') {
+          return { endX: c.x, endY: c.y, blocked: true, hitPaper: false, viaAperture: true };
+        }
+      }
+      const t = 1500;
+      return { endX: sx + dx * t, endY: sy + dy * t, blocked: false, hitPaper: false, viaAperture: true };
+    }
+
+    return { endX: sx + dx * 1500, endY: sy + dy * 1500, blocked: false, hitPaper: false };
+  }
+
+  function blockedX(x, y) {
+    return `<g class="blocked-x" transform="translate(${x},${y})">
+              <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5"/>
+              <line x1="-3.5" y1="3.5" x2="3.5" y2="-3.5"/>
+            </g>`;
+  }
+
+  function rayLine(x1, y1, x2, y2, cls) {
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${cls}"/>`;
+  }
+
+  function drawRays() {
+    let html = '';
+
+    // ── Direct sun rays — fan + 2 highlighted ──
+    // Background ambient fan
+    const ambientAngles = [0.20, 0.55, 0.85, 1.10, 1.40, -0.50, -0.20];
+    for (const a of ambientAngles) {
+      const dx = Math.sin(a), dy = Math.cos(a);
+      const sx = SUN.x, sy = SUN.y + SUN.r;
+      const trace = traceRay(sx, sy, dx, dy);
+      if (trace.blocked) {
+        html += `<line x1="${sx}" y1="${sy}" x2="${trace.endX}" y2="${trace.endY}" class="ray-source-faint"/>`;
+      } else {
+        html += `<line x1="${sx}" y1="${sy}" x2="${trace.endX}" y2="${trace.endY}" class="ray-source-faint"/>`;
+      }
+    }
+
+    // Highlighted ray to bottle (always shown)
     {
-      const targetX = (paperX1 + paperX2) / 2;
-      const targetY = (paperY1 + paperY2) / 2 - 10;
-      const dx = targetX - sourceX;
-      const dy = targetY - sourceY;
+      const tx = BOTTLE.cx + BOTTLE.w * 0.30;
+      const ty = BOTTLE.cy - BOTTLE.h * 0.20;
+      const dx = tx - SUN.x, dy = ty - (SUN.y + SUN.r);
       const len = Math.hypot(dx, dy);
       const ux = dx / len, uy = dy / len;
+      // It might still be blocked by the box top wall? No — bottle is to the LEFT of the box, so trace would never reach the box.
+      html += rayLine(SUN.x, SUN.y + SUN.r, tx, ty, 'ray-source');
+    }
 
-      if (enclosureOn) {
-        // ray hits the top wall at y = boxTop - wallT (top wall top edge)
-        const wallY = boxTop - 8;
-        const t = (wallY - sourceY) / uy;
-        const hx = sourceX + ux * t;
-        if (t > 0 && hx >= boxLeft && hx <= boxRight) {
-          drawArrowRay(sourceX, sourceY, hx, wallY, '#f7c948', 0.85, 2.0);
-          drawBlocked(hx, wallY - 4);
-        } else {
-          drawArrowRay(sourceX, sourceY, targetX, targetY, '#f7c948', 0.85, 2.0);
-        }
+    // Highlighted direct ray aimed at paper — blocked correctly when enclosure is on
+    {
+      const tx = (PAPER.x1 + PAPER.x2) / 2;
+      const ty = (PAPER.y1 + PAPER.y2) / 2;
+      const dx = tx - SUN.x, dy = ty - (SUN.y + SUN.r);
+      const len = Math.hypot(dx, dy);
+      const ux = dx / len, uy = dy / len;
+      const trace = traceRay(SUN.x, SUN.y + SUN.r, ux, uy);
+      if (trace.blocked) {
+        html += rayLine(SUN.x, SUN.y + SUN.r, trace.endX, trace.endY, 'ray-source');
+        html += blockedX(trace.endX, trace.endY);
       } else {
-        drawArrowRay(sourceX, sourceY, targetX, targetY, '#f7c948', 0.95, 2.0);
+        html += rayLine(SUN.x, SUN.y + SUN.r, trace.endX, trace.endY, 'ray-source');
       }
     }
 
-    // a yellow ray from sun hitting the bottle (visualizes how the bottle gets lit)
-    {
-      const tx = bottleCx + bottleW * 0.25;
-      const ty = bottleCy - bottleH * 0.10;
-      drawArrowRay(sourceX, sourceY, tx, ty, '#f7c948', 0.95, 2.0);
-    }
-
-    // ----- bottle (drawn on top of yellow rays so they appear to "land" on it) -----
-    drawBottle(bottleCx, bottleCy, bottleW, bottleH);
-
-    // ----- reflected purple rays -----
-    const samplePts = getSamplePoints(bottleCx, bottleCy, bottleW, bottleH);
-    let rayIdx = 0;
-    for (const p of samplePts) {
-      for (let i = 0; i < RAYS_PER_SAMPLE; i++) {
-        const r = offsets[rayIdx++];
-        const ang = r * 0.85; // ±~49° around horizontal-right
+    // ── Reflected rays from bottle sample points ──
+    const samples = getSamplePoints();
+    samples.forEach((p, idx) => {
+      const N = 6;
+      for (let i = 0; i < N; i++) {
+        const tparam = N === 1 ? 0 : (i / (N - 1)) * 2 - 1; // -1..1
+        const ang = tparam * 0.7; // ±~40°
         const dx = Math.cos(ang);
         const dy = Math.sin(ang);
-
-        if (enclosureOn) {
-          // intersect with x = boxLeft (front wall plane)
-          const t1 = (boxLeft - p.x) / dx;
-          if (t1 <= 0) continue;
-          const wallY = p.y + dy * t1;
-
-          if (wallY < boxTop - 8 || wallY > boxBottom + 8) {
-            // ray exits scene above/below the box — just draw a fading stub
-            const fadeLen = (boxLeft - p.x) * 0.95;
-            drawArrowRay(p.x, p.y, p.x + dx * fadeLen, p.y + dy * fadeLen, '#a855f7', 0.20, 1.4);
-          } else if (wallY < apY1 || wallY > apY2) {
-            // blocked at front wall
-            drawArrowRay(p.x, p.y, boxLeft, wallY, '#a855f7', 0.30, 1.5);
-            drawBlocked(boxLeft - 2, wallY);
-          } else {
-            // passes through aperture → land on paper
-            const t2 = (paperX1 - p.x) / dx;
-            const paperY = p.y + dy * t2;
-            const clampedY = Math.max(paperY1 + 2, Math.min(paperY2 - 2, paperY));
-            drawArrowRay(p.x, p.y, paperX1, clampedY, '#a855f7', 0.92, 1.6);
-          }
+        const trace = traceRay(p.x, p.y, dx, dy);
+        if (trace.blocked) {
+          html += `<line x1="${p.x}" y1="${p.y}" x2="${trace.endX}" y2="${trace.endY}" class="ray-blocked"/>`;
+          html += blockedX(trace.endX, trace.endY);
+        } else if (trace.escaped) {
+          // ray went past the paper area (above/below) — draw as faint reflect
+          html += `<line x1="${p.x}" y1="${p.y}" x2="${trace.endX}" y2="${trace.endY}" stroke="#b088ff" stroke-width="0.9" stroke-dasharray="4 8" opacity="0.18" class="" style="animation:dashflow 2.4s linear infinite"/>`;
         } else {
-          // no enclosure — ray travels until it hits paper x or runs off
-          const t2 = (paperX1 - p.x) / dx;
-          if (t2 <= 0) continue;
-          const paperY = p.y + dy * t2;
-
-          if (paperY < paperY1 - 30 || paperY > paperY2 + 30) {
-            // far off paper — fading stub
-            const fadeLen = (paperX1 - p.x) * 0.7;
-            drawArrowRay(p.x, p.y, p.x + dx * fadeLen, p.y + dy * fadeLen, '#a855f7', 0.30, 1.4);
-          } else {
-            const clampedY = Math.max(paperY1 + 2, Math.min(paperY2 - 2, paperY));
-            drawArrowRay(p.x, p.y, paperX1, clampedY, '#a855f7', 0.85, 1.6);
-          }
+          html += rayLine(p.x, p.y, trace.endX, trace.endY, 'ray-reflect');
         }
       }
+    });
+
+    rays.innerHTML = html;
+  }
+
+  function drawBox() {
+    if (!enclosureOn) {
+      boxWalls.innerHTML = '';
+      apAnn.innerHTML = '';
+      return;
     }
+    const ap = getApertureBounds();
+    const t = BOX.wallT;
+    let html = '';
+    // Top wall (extends slightly above to feel solid)
+    html += `<rect class="wall" x="${BOX.left - t}" y="${BOX.top - t}" width="${BOX.right - BOX.left + 2*t}" height="${t}"/>`;
+    // Bottom wall
+    html += `<rect class="wall" x="${BOX.left - t}" y="${BOX.bottom}" width="${BOX.right - BOX.left + 2*t}" height="${t}"/>`;
+    // Back wall (right side)
+    html += `<rect class="wall" x="${BOX.right}" y="${BOX.top - t}" width="${t}" height="${BOX.bottom - BOX.top + 2*t}"/>`;
+    // Front wall — split around aperture
+    if (ap.y1 > BOX.top) {
+      html += `<rect class="wall" x="${BOX.left - t}" y="${BOX.top}" width="${t}" height="${ap.y1 - BOX.top}"/>`;
+    }
+    if (ap.y2 < BOX.bottom) {
+      html += `<rect class="wall" x="${BOX.left - t}" y="${ap.y2}" width="${t}" height="${BOX.bottom - ap.y2}"/>`;
+    }
+    boxWalls.innerHTML = html;
 
-    // ----- sun on top of everything -----
-    drawSun(sourceX, sourceY, sourceR);
-    ctx.fillStyle = '#6b7a88';
-    ctx.font = '11px Inter, system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('light source', sourceX, sourceY + sourceR + 16);
+    // Aperture annotation: dimension bracket on the LEFT of the front wall, plus glow
+    const lx = BOX.left - 30;
+    let ann = '';
+    // glow rectangle inside the aperture opening
+    ann += `<rect x="${BOX.left - t/2}" y="${ap.y1}" width="${t}" height="${ap.y2 - ap.y1}"
+                  fill="rgba(255,200,100,0.18)"/>`;
+    // dashed extension lines
+    ann += `<line x1="${lx + 4}" y1="${ap.y1}" x2="${BOX.left - t}" y2="${ap.y1}" stroke="#ffc864" stroke-width="0.8" stroke-dasharray="2 3" opacity="0.7"/>`;
+    ann += `<line x1="${lx + 4}" y1="${ap.y2}" x2="${BOX.left - t}" y2="${ap.y2}" stroke="#ffc864" stroke-width="0.8" stroke-dasharray="2 3" opacity="0.7"/>`;
+    // dimension line between
+    ann += `<line x1="${lx + 8}" y1="${ap.y1}" x2="${lx + 8}" y2="${ap.y2}" stroke="#ffc864" stroke-width="1.2"/>`;
+    // arrow heads
+    ann += `<polygon points="${lx + 8},${ap.y1} ${lx + 5},${ap.y1 + 5} ${lx + 11},${ap.y1 + 5}" fill="#ffc864"/>`;
+    ann += `<polygon points="${lx + 8},${ap.y2} ${lx + 5},${ap.y2 - 5} ${lx + 11},${ap.y2 - 5}" fill="#ffc864"/>`;
+    // label
+    ann += `<text class="label-text label-hot" x="${lx + 4}" y="${BOX.cy - 4}" text-anchor="end">aperture</text>`;
+    ann += `<text class="label-text label-hot" x="${lx + 4}" y="${BOX.cy + 9}" text-anchor="end" style="font-size:8.5px;">${Math.round(aperture * 100)}%</text>`;
+    apAnn.innerHTML = ann;
+  }
 
-    // labels
-    ctx.fillText('bottle', bottleCx, bottleCy + bottleH / 2 + 16);
+  function drawPaper() {
+    const w = PAPER.x2 - PAPER.x1;
+    const h = PAPER.y2 - PAPER.y1;
+    const cx = (PAPER.x1 + PAPER.x2) / 2;
+    const cy = (PAPER.y1 + PAPER.y2) / 2;
+    paperClipRect.setAttribute('x', PAPER.x1);
+    paperClipRect.setAttribute('y', PAPER.y1);
+    paperClipRect.setAttribute('width', w);
+    paperClipRect.setAttribute('height', h);
 
-    // readout text
+    let html = '';
+    // paper background
+    html += `<rect x="${PAPER.x1}" y="${PAPER.y1}" width="${w}" height="${h}" fill="#ede7d6" stroke="#a9a496" stroke-width="0.6"/>`;
+    // paper subtle gradient
+    html += `<rect x="${PAPER.x1}" y="${PAPER.y1}" width="${w}" height="${h}"
+                   fill="url(#paperShade)" opacity="0.20"/>`;
+
+    // Captured image
+    let blurStdDev, opacity, scaleX, scaleY;
+    if (!enclosureOn) {
+      // washed out: yellow tint + faint giant purple blob
+      html += `<rect x="${PAPER.x1}" y="${PAPER.y1}" width="${w}" height="${h}"
+                     fill="#fff5d6" opacity="0.32"/>`;
+      blurStdDev = 9;
+      opacity = 0.10;
+      scaleX = 1.5; scaleY = 0.85;
+    } else {
+      // tradeoff: brightness ~ aperture; blur ~ aperture
+      blurStdDev = 0.4 + aperture * 12;
+      opacity = Math.min(0.95, 0.18 + aperture * 0.78);
+      scaleX = 0.85; scaleY = 0.78;
+    }
+    paperBlurOp.setAttribute('stdDeviation', blurStdDev.toFixed(2));
+
+    const ibw = w * scaleX;
+    const ibh = h * scaleY;
+    const path = bottlePath(cx, cy, ibw, ibh);
+    html += `<g clip-path="url(#paperClip)" opacity="${opacity}" filter="url(#paperBlur)">
+              <path d="${path}" fill="#7e3eb0"/>
+             </g>`;
+
+    html += `<text class="label-text" x="${cx}" y="${PAPER.y2 + 14}" text-anchor="middle">paper</text>`;
+
+    paperG.innerHTML = html;
+  }
+
+  function updateReadout() {
     let msg;
     if (!enclosureOn) {
-      msg = 'paper sees direct + reflected light → washed out, faint purple';
+      msg = 'no enclosure · direct + reflected → washed out';
     } else if (aperture > 0.65) {
       msg = 'wide aperture → bright but blurry';
-    } else if (aperture > 0.25) {
-      msg = 'medium aperture → some sharpness, decent brightness';
-    } else if (aperture > 0.10) {
-      msg = 'small aperture → sharper image, dimmer';
+    } else if (aperture > 0.30) {
+      msg = 'medium aperture → some sharpness';
+    } else if (aperture > 0.12) {
+      msg = 'small aperture → sharper · dimmer';
     } else {
-      msg = 'pinhole → sharp but barely visible';
+      msg = 'pinhole → sharp but dim';
     }
     readout.textContent = msg;
   }
 
-  // events
+  function update() {
+    drawSunSpokes();
+    drawBottle();
+    drawBox();
+    drawPaper();
+    drawRays();
+    updateReadout();
+  }
+
   function syncToggle() {
     enclToggle.classList.toggle('active', enclosureOn);
     apWrap.classList.toggle('disabled', !enclosureOn);
@@ -501,18 +666,16 @@
   enclEl.addEventListener('change', () => {
     enclosureOn = enclEl.checked;
     syncToggle();
-    draw();
+    update();
   });
-
   apEl.addEventListener('input', () => {
     aperture = parseFloat(apEl.value);
     apVal.textContent = Math.round(aperture * 100) + '%';
-    draw();
+    update();
   });
 
   syncToggle();
-  window.addEventListener('resize', resize);
-  resize();
+  update();
 })();
 </script>
 </body>
