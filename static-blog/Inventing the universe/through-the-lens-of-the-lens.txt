@@ -17,7 +17,7 @@ I am going to assume that you already know basic elementary physics on reflectio
 
 
 <div class="animation-embed" data-anim-label="Tap to interact" style="position:relative;margin:2rem 0;border-radius:10px;overflow:hidden;border:1px solid rgba(160,125,46,0.2);">
-  <iframe src="blog-animations/1776961809611-reflection-refraction.html" loading="lazy" style="width:100%;height:420px;border:0;display:block;background:#0f1014;"></iframe>
+  <iframe src="blog-animations/1776961809611-reflection-refraction.html" loading="lazy" style="width:100%;height:420px;border:0;display:block;background:#0a0d16;"></iframe>
 </div>
 
 Now let's say that you are looking at a bottle of Blueberry Protein Shake and you want to *capture* this view on a white paper. You place the white paper in front of the bottle and to your surprise, you still see a blank white paper. Depending on how close you are to the bottle and how reflective the bottle's purple body is, you may see a hint of purple on the paper, but still no clear outline. Why is this? Play around with the illustration below. 

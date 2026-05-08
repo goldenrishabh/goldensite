@@ -156,6 +156,25 @@
   .label-hot { fill: var(--amber); }
   .label-cold { fill: var(--violet); }
 
+  .preset {
+    padding: 5px 10px;
+    border: 1px solid var(--rule);
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+    font: inherit;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition: 0.15s;
+  }
+  .preset:hover { color: var(--ink); border-color: var(--ink-dim); }
+  .preset.active {
+    color: var(--amber);
+    border-color: var(--amber);
+    box-shadow: 0 0 8px var(--amber-soft);
+  }
+  .preset-label { color: var(--ink-dim); margin-right: 4px; }
+
   @media (max-width: 520px) {
     .slider { min-width: 100%; }
     .readout { margin-left: 0; width: 100%; text-align: left; }
@@ -165,12 +184,18 @@
 <body>
 <div class="wrap">
   <div class="controls">
+    <span class="preset-label">Preset</span>
+    <button class="preset active" data-preset="mirror">Mirror</button>
+    <button class="preset" data-preset="satin">Satin</button>
+    <button class="preset" data-preset="matte">Matte</button>
+    <span class="readout" id="readout">shiny — light reflects evenly</span>
+  </div>
+  <div class="controls">
     <div class="slider">
       <label>Surface roughness</label>
-      <input id="rough" type="range" min="0" max="1" step="0.01" value="0.05">
-      <span class="val" id="roughVal">smooth</span>
+      <input id="rough" type="range" min="0" max="1" step="0.01" value="0">
+      <span class="val" id="roughVal">mirror</span>
     </div>
-    <span class="readout" id="readout">shiny — light reflects evenly</span>
   </div>
   <div class="scene">
     <svg id="svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet">
@@ -227,7 +252,7 @@
   <div class="legend">
     <span style="color:#ffc864"><i></i>incident · reflected light</span>
     <span style="color:#a9a496"><i></i>surface normal (dashed)</span>
-    <span style="color:#b088ff"><i></i>blueberry shake bottle</span>
+    <span style="color:#b088ff"><i></i>bottle preview</span>
   </div>
 </div>
 <script>
@@ -241,8 +266,15 @@
   const bottleCaption = document.getElementById('bottleCaption');
   const hatching = document.getElementById('hatching');
   const hiBlurOp = document.getElementById('hiBlurOp');
+  const presetBtns = document.querySelectorAll('.preset');
 
-  let roughness = 0.05;
+  let roughness = 0;
+
+  const PRESETS = {
+    mirror: 0,
+    satin:  0.45,
+    matte:  1,
+  };
 
   // Stable PRNG offsets
   const N_RAYS = 16;
@@ -381,13 +413,36 @@
       roughness < 0.9  ? 'rough'  : 'matte';
   }
 
+  function setActivePreset(name) {
+    presetBtns.forEach(b => b.classList.toggle('active', b.dataset.preset === name));
+  }
+
+  function detectPreset() {
+    for (const [name, val] of Object.entries(PRESETS)) {
+      if (Math.abs(val - roughness) < 0.02) return name;
+    }
+    return null;
+  }
+
+  function applyPreset(name) {
+    roughness = PRESETS[name];
+    roughEl.value = roughness;
+    setActivePreset(name);
+    update();
+  }
+
   roughEl.addEventListener('input', () => {
     roughness = parseFloat(roughEl.value);
     update();
+    setActivePreset(detectPreset());
+  });
+  presetBtns.forEach(btn => {
+    btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
   });
 
   drawHatching();
   update();
+  setActivePreset(detectPreset());
 })();
 </script>
 </body>
