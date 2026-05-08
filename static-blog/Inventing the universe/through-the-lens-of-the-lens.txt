@@ -3,7 +3,7 @@ title: "Through the Lens of the Lens"
 excerpt: 
 category: "Inventing the universe"
 date: 2026-04-23
-readTime: "2 min read"
+readTime: "4 min read"
 tags: []
 ---
 
@@ -11,13 +11,15 @@ tags: []
 
 # Introduction
 
-Let us put on our *first-principles thinking* hat and try and figure ourselves on how we would like to capture an image. Ideally for any first principles thinking we should start with the *"why"* we want to capture an image, but to avoid digging the past, just keep your own personal motivation in mind (which could be, for training AGI, or perhaps just to capture your cute little dog). 
+Let us put on our *first-principles thinking* hat and try and figure ourselves on how we would capture an image. Ideally for any first principles thinking we should start with the *"why"* we want to capture an image, but to avoid digging the past, just keep your own personal motivation in mind (which could be, for training AGI, or perhaps just to capture your cute little dog). 
 
-I am going to assume that you already know basic elementary physics on reflection and refraction of light. A perfect mirror reflects light at the same angle of incidence whereas refraction, bends the light depending on the medium's refractive index. For the visual learners out there, play around with the animation below which should (hopefully) jog your memory!
+I am going to assume that you already know basic elementary physics on reflection and refraction of light. A perfect mirror reflects light at the same angle of incidence whereas refraction, bends the light depending on the ration of the two medium's refractive index. For the visual learners out there, play around with the animation below which should (hopefully) jog your memory!
 
 
 <div class="animation-embed" data-anim-label="Tap to interact" style="position:relative;margin:2rem 0;border-radius:10px;overflow:hidden;border:1px solid rgba(160,125,46,0.2);">
   <iframe src="blog-animations/1776961809611-reflection-refraction.html" loading="lazy" style="width:100%;height:420px;border:0;display:block;background:#0f1014;"></iframe>
 </div>
 
-Now let's say that you are looking at a bottle of Blueberry Protein Shake and you want to capture this view on a white paper. You place a white paper in front of the shake and hope to atleast see the
+Now let's say that you are looking at a bottle of Blueberry Protein Shake and you want to *capture* this view on a white paper. You place the white paper in front of the bottle and to your surprise, you still see a blank white paper. Depending on how close you are to the bottle and how reflective the bottle's purple body is, you may see a hint of purple on the paper, but still no clear outline. Why is this? Play around with the illustration below. The light source above emits light in all directions, or atleast within a cone of directions. When this light hits the surface of the bottle, it get's reflected at an angle depending on how smooth the surface of the bottle is. If the surface of the bottle is very smooth, the bottle appears shiny because the rays reflect off the surface evenly whereas if it is a rough surface, the bottle appears matte/grainy because the incident light get's scattered (reflected in arbritarty directions). This relfected light is then incident on the paper at a point (for now we'll ignore the complexity that the white paper is also reflecting some of the incident light). But there are rays from many points on the bottle hitting the paper at the same point and thus the rays get averaged out and you see a blur. But if all rays are purple, shouldn't the paper atleast be a purple blur?. Well there are rays from the white source directly hitting the paper as well! And the rays from the source have more intensity (are stronger) than the reflected rays off the bottle (the bottle absorbs rays from the white light which are not purple). To completely block off the white rays, we could cover the area around the paper with only an opening in the front where the bottle is. We see a little progress now. Atleast we can see the purple blur. But how do we get a sharp image? Remember that there are multiple rays hitting the same point on the paper from the bottle. If only we could somehow have a single ray hit a point on the paper. Well we start covering the front of the paper as well until we only have a small hole which allows only a single ray to pass through it in a particular direction. Now ofcourse this hole would have to be incredibly small to allow a single ray to pass through it. Also if only a single ray passes through it, the intensity would be so low that you would barely see the image. To counter this you could try widening the gap. The image become's brighter allowing more rays to pass through. This adjustable gap is what is called *Aperture* of the camera!
+
+However, we notice that as we increase the aperture the image becomes brighter but at the same time starts to blur. We need something which would map the incident light to a particular point
